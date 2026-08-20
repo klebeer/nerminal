@@ -428,17 +428,16 @@ elif [[ $RELEASE_CHANNEL = "stable" ]]; then
     # Enable heap usage tracking & profiling using jemalloc through pprof.
     FEATURES="$FEATURES,jemalloc_pprof,heap_usage_tracking"
 elif [[ $RELEASE_CHANNEL = "oss" ]]; then
-    WARP_BIN="warp-oss"
-    BUNDLE_ID="dev.warp.WarpOss"
-    WARP_APP_NAME="WarpOss"
-    WARP_SCHEME_NAME="warposs"
+    WARP_BIN="nerminal"
+    BUNDLE_ID="com.klebeer.Nerminal"
+    WARP_APP_NAME="Nerminal"
+    WARP_SCHEME_NAME="nerminal"
     # The OSS channel does not ship Sentry, so drop the cocoa_sentry feature
     # (which would otherwise pull in the Sentry framework dependency).
     FEATURES="release_bundle,extern_plist"
 fi
 
 OUT_DIR="target/$TARGET_PROFILE_DIR/bundle/osx"
-DOCK_TILE_PLUGIN_DIR="target/$TARGET_PROFILE_DIR/WarpDockTilePlugin.docktileplugin"
 
 # Handle specific architecture targeting
 if [[ -n "$TARGET_ARCH" ]]; then
@@ -651,15 +650,6 @@ if [[ "$ARTIFACT" == "app" ]]; then
     cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" "$OUT_DIR/"
   fi
 
-  # Note that the dock tile plugin is pre-built for both arm64 and x86_64 so we don't need to run lipo on it.
-  echo "Creating PlugIns directory and copying pre-built DockTilePlugin..."
-  mkdir -p "$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/PlugIns"
-  cp -R "$DOCK_TILE_PLUGIN_DIR" "$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/PlugIns/"
-
-  echo "Updating plist with dock tile plugin entries"
-  plutil -insert NSDockTilePlugIn -string "WarpDockTilePlugin.docktileplugin" "$BUNDLE_DIR"/$WARP_APP_NAME.app/Contents/Info.plist
-  plutil -insert MainAppBundleIdentifier -string "$BUNDLE_ID" "$BUNDLE_DIR"/$WARP_APP_NAME.app/Contents/PlugIns/WarpDockTilePlugin.docktileplugin/Contents/Info.plist
-
   BUNDLED_RESOURCES_DIR="$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/Resources"
   echo "Preparing bundled resources..."
   "$WORKSPACE_ROOT_DIR/script/prepare_bundled_resources" "$BUNDLED_RESOURCES_DIR" "$RELEASE_CHANNEL" "$CARGO_PROFILE"
@@ -677,7 +667,7 @@ if [[ "$ARTIFACT" == "app" ]]; then
   if [[ $RELEASE_CHANNEL = "stable" ]]; then
     CLI_SCRIPT_PATH="$BUNDLED_RESOURCES_DIR/bin/oz"
   elif [[ $RELEASE_CHANNEL = "oss" ]]; then
-    CLI_SCRIPT_PATH="$BUNDLED_RESOURCES_DIR/bin/warp-oss"
+    CLI_SCRIPT_PATH="$BUNDLED_RESOURCES_DIR/bin/nerminal"
   else
     CLI_SCRIPT_PATH="$BUNDLED_RESOURCES_DIR/bin/oz-$RELEASE_CHANNEL"
   fi
@@ -1017,7 +1007,6 @@ if [ "${GITHUB_ACTIONS}" == "true" ]; then
     fi
   fi
 
-  echo "dock_tile_plugin_dir=$DOCK_TILE_PLUGIN_DIR" >> "$GITHUB_OUTPUT"
   echo "frameworks_dir=app/frameworks/${FRAMEWORK_OVERRIDE:-default}" >> "$GITHUB_OUTPUT"
   
   # For full bundles, output DMG information

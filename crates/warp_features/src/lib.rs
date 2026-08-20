@@ -25,6 +25,18 @@ pub enum FeatureFlag {
     /// Enables cloud object related features for an explicit allowlist of team testers.
     CloudObjects,
 
+    /// Whether this build has a Warp account behind it. When off there is
+    /// nothing to sign up for or sign in to, so account entry points, the
+    /// avatar, and account-backed surfaces are hidden rather than shown in a
+    /// permanently logged-out state.
+    WarpAccount,
+
+    /// Whether to offer the one-time suggestion banners a new profile sees:
+    /// vim keybindings, alias expansion. Off means a fresh profile opens
+    /// straight into a usable terminal; the features they advertise stay
+    /// available from Settings.
+    FirstRunBanners,
+
     /// If `true`, fetch updated Warp channel versions from the Warp server endpoint instead of
     /// from GCP directly.
     FetchChannelVersionsFromWarpServer,

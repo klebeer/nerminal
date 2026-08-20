@@ -20744,7 +20744,11 @@ impl Workspace {
                         Shrinkable::new(
                             1.,
                             Text::new_inline(
-                                "Search sessions, agents, files...",
+                                if FeatureFlag::AgentMode.is_enabled() {
+                                    "Search sessions, agents, files..."
+                                } else {
+                                    "Search sessions, files..."
+                                },
                                 appearance.ui_font_family(),
                                 14.,
                             )
@@ -21272,6 +21276,7 @@ impl Workspace {
         // Legacy AI assistant button (non-agent-mode only)
         if is_online
             && !FeatureFlag::AgentMode.is_enabled()
+            && AISettings::as_ref(ctx).is_any_ai_enabled(ctx)
             && !is_web_anonymous_user
             && !self.current_workspace_state.is_ai_assistant_panel_open
         {
@@ -21296,7 +21301,10 @@ impl Workspace {
             );
         } else {
             let resource_center_closed = !self.current_workspace_state.is_resource_center_open;
-            if resource_center_closed && ContextFlag::WarpEssentials.is_enabled() {
+            if resource_center_closed
+                && ContextFlag::WarpEssentials.is_enabled()
+                && FeatureFlag::WarpAccount.is_enabled()
+            {
                 target.add_child(
                     Container::new(self.render_resource_center_button(appearance, ctx))
                         .with_margin_left(TAB_BAR_PADDING_LEFT)
@@ -21311,7 +21319,8 @@ impl Workspace {
             );
         }
 
-        if self.auth_state.is_anonymous_or_logged_out()
+        if FeatureFlag::WarpAccount.is_enabled()
+            && self.auth_state.is_anonymous_or_logged_out()
             && !FeatureFlag::OpenWarpNewSettingsModes.is_enabled()
         {
             if is_web_anonymous_user {

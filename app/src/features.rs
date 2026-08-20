@@ -3,11 +3,221 @@ use std::collections::HashSet;
 use warp_core::channel::ChannelState;
 pub use warp_core::features::*;
 
+/// Everything the OSS channel turns off: the agent/AI product, MCP, Warp Drive
+/// and the cloud/Oz backend, plus the onboarding wizard that fronts them. What
+/// is left is the terminal itself, its settings, and its themes.
+///
+/// This is a subtraction because Cargo features are additive: `default` in
+/// `app/Cargo.toml` is shared by every channel binary in this crate, so the
+/// only way for one channel to ship a smaller surface without editing that
+/// shared list is to disable flags after they have been resolved. See
+/// [`ChannelState::with_disabled_features`].
+pub const OSS_DISABLED_FLAGS: &[FeatureFlag] = &[
+    // Onboarding wizard and the login wall it ends on.
+    FeatureFlag::AgentOnboarding,
+    FeatureFlag::AccountFirstOnboarding,
+    FeatureFlag::GetStartedTab,
+    FeatureFlag::OpenWarpNewSettingsModes,
+    FeatureFlag::HOAOnboardingFlow,
+    FeatureFlag::AgentTips,
+    FeatureFlag::ForceLogin,
+    FeatureFlag::FirstRunBanners,
+    // Agent mode and the conversation UI.
+    FeatureFlag::AgentMode,
+    FeatureFlag::AgentModePrimaryXML,
+    FeatureFlag::AgentModePrePlanXML,
+    FeatureFlag::AgentModeWorkflows,
+    FeatureFlag::AgentModeComputerUse,
+    FeatureFlag::BackgroundComputerUse,
+    FeatureFlag::LocalComputerUse,
+    FeatureFlag::AgentDecidesCommandExecution,
+    FeatureFlag::AgentHarness,
+    FeatureFlag::AgentSharedSessions,
+    FeatureFlag::AgentView,
+    FeatureFlag::AgentViewBlockContext,
+    FeatureFlag::AgentViewConversationListView,
+    FeatureFlag::AgentViewPromptChip,
+    FeatureFlag::AgentToolbarEditor,
+    FeatureFlag::AgentManagementView,
+    FeatureFlag::AgentManagementDetailsView,
+    FeatureFlag::InteractiveConversationManagementView,
+    FeatureFlag::NamedAgents,
+    FeatureFlag::AskUserQuestion,
+    FeatureFlag::ListSkills,
+    FeatureFlag::BundledSkills,
+    FeatureFlag::SkillArguments,
+    FeatureFlag::AIRules,
+    FeatureFlag::SuggestedRules,
+    FeatureFlag::AIContextMenuEnabled,
+    FeatureFlag::AIContextMenuCode,
+    FeatureFlag::AIContextMenuCommands,
+    FeatureFlag::AIResumeButton,
+    FeatureFlag::AtMenuOutsideOfAIMode,
+    FeatureFlag::ConversationApi,
+    FeatureFlag::ConversationArtifacts,
+    FeatureFlag::ConversationsAsContext,
+    FeatureFlag::ActiveConversationRequiresInteraction,
+    FeatureFlag::ReloadStaleConversationFiles,
+    FeatureFlag::IncrementalAutoReload,
+    FeatureFlag::SharedBlockTitleGeneration,
+    FeatureFlag::SummarizationCancellationConfirmation,
+    FeatureFlag::SummarizationConversationCommand,
+    FeatureFlag::SummarizationViaMessageReplacement,
+    FeatureFlag::ContextWindowUsageV2,
+    FeatureFlag::ContextWindowUsageBreakdown,
+    FeatureFlag::FallbackModelLoadOutputMessaging,
+    FeatureFlag::PromptSuggestionsViaMAA,
+    FeatureFlag::PredictAMQueries,
+    FeatureFlag::CommandCorrectionKey,
+    FeatureFlag::FastForwardAutoexecuteButton,
+    FeatureFlag::ForkFromCommand,
+    FeatureFlag::QueueSlashCommand,
+    FeatureFlag::QueuedPromptsV2,
+    FeatureFlag::PendingUserQueryIndicator,
+    FeatureFlag::RevertToCheckpoints,
+    FeatureFlag::RewindSlashCommand,
+    FeatureFlag::InlineHistoryMenu,
+    FeatureFlag::InlineRepoMenu,
+    FeatureFlag::InlineProfileSelector,
+    FeatureFlag::CLIAgentRichInput,
+    FeatureFlag::TransferControlTool,
+    FeatureFlag::CodexNotifications,
+    FeatureFlag::CodexPlugin,
+    FeatureFlag::HOANotifications,
+    FeatureFlag::OpenCodeNotifications,
+    FeatureFlag::HOARemoteControl,
+    FeatureFlag::LSPAsATool,
+    FeatureFlag::FigmaDetection,
+    FeatureFlag::CodeModeChip,
+    FeatureFlag::GithubPrPromptChip,
+    FeatureFlag::PromptCacheExpiryWarning,
+    // Agent tool surface: anything that reads the machine on the agent's behalf.
+    FeatureFlag::FileRetrievalTools,
+    FeatureFlag::GrepTool,
+    FeatureFlag::WebSearchUI,
+    FeatureFlag::WebFetchUI,
+    FeatureFlag::ImageAsContext,
+    FeatureFlag::ReadImageFiles,
+    FeatureFlag::SelectionAsContext,
+    FeatureFlag::DiffSetAsContext,
+    FeatureFlag::DriveObjectsAsContext,
+    FeatureFlag::BlocklistMarkdownTableRendering,
+    FeatureFlag::BlocklistMarkdownImages,
+    // Model inference configuration and billing.
+    FeatureFlag::CustomModelRouters,
+    FeatureFlag::SoloUserByok,
+    FeatureFlag::SuperGrok,
+    FeatureFlag::GeminiEnterprise,
+    FeatureFlag::GPTConfigurableContextWindow,
+    FeatureFlag::APIKeyManagement,
+    FeatureFlag::TeamApiKeys,
+    FeatureFlag::UsageBasedPricing,
+    FeatureFlag::BillingAndUsagePageV2,
+    // Codebase indexing and embedding.
+    FeatureFlag::FullSourceCodeEmbedding,
+    FeatureFlag::CodebaseIndexPersistence,
+    FeatureFlag::CodebaseIndexSpeedbump,
+    FeatureFlag::CrossRepoContext,
+    FeatureFlag::RemoteCodebaseIndexing,
+    FeatureFlag::UseTantivySearch,
+    FeatureFlag::SearchCodebaseUI,
+    // Agent-driven code review.
+    FeatureFlag::HoaCodeReview,
+    FeatureFlag::InlineCodeReview,
+    FeatureFlag::CodeReviewFind,
+    FeatureFlag::CodeReviewSaveChanges,
+    FeatureFlag::AutoOpenCodeReviewPane,
+    FeatureFlag::RemoteCodeReview,
+    FeatureFlag::GitOperationsInCodeReview,
+    FeatureFlag::EmbeddedCodeReviewComments,
+    FeatureFlag::FileAndDiffSetComments,
+    FeatureFlag::ContextLineReviewComments,
+    FeatureFlag::RevertDiffHunk,
+    FeatureFlag::DiscardPerFileAndAllChanges,
+    FeatureFlag::V4AFileDiffs,
+    FeatureFlag::PRCommentsV2,
+    FeatureFlag::PRCommentsSkill,
+    FeatureFlag::RetryTruncatedCodeResponses,
+    FeatureFlag::LinkedCodeBlocks,
+    FeatureFlag::CreateProjectFlow,
+    FeatureFlag::Projects,
+    // Launch modals, all of which start an agent.
+    FeatureFlag::CodeLaunchModal,
+    FeatureFlag::OzLaunchModal,
+    FeatureFlag::OpenWarpLaunchModal,
+    FeatureFlag::OrchestrationLaunchModal,
+    FeatureFlag::AgentCliLaunchModal,
+    // MCP.
+    FeatureFlag::McpServer,
+    FeatureFlag::McpOauth,
+    FeatureFlag::McpDebuggingIds,
+    FeatureFlag::FileBasedMcp,
+    FeatureFlag::MCPGroupedServerContext,
+    FeatureFlag::WellKnownMcpIds,
+    FeatureFlag::FactoryMcp,
+    // Cloud agents, Oz, and handoff.
+    FeatureFlag::CloudMode,
+    FeatureFlag::CloudModeFromLocalSession,
+    FeatureFlag::CloudModeImageContext,
+    FeatureFlag::CloudModeSetupV2,
+    FeatureFlag::CloudModeInputV2,
+    FeatureFlag::CloudEnvironments,
+    FeatureFlag::CloudRunners,
+    FeatureFlag::CloudAgentRunners,
+    FeatureFlag::CloudConversations,
+    FeatureFlag::CreateEnvironmentSlashCommand,
+    FeatureFlag::AmbientAgentsCommandLine,
+    FeatureFlag::AmbientAgentsImageUpload,
+    FeatureFlag::ScheduledAmbientAgents,
+    FeatureFlag::AmbientAgentsRTC,
+    FeatureFlag::SyncAmbientPlans,
+    FeatureFlag::OzPlatformSkills,
+    FeatureFlag::OzIdentityFederation,
+    FeatureFlag::OzChangelogUpdates,
+    FeatureFlag::OzHandoff,
+    FeatureFlag::HandoffLocalCloud,
+    FeatureFlag::HandoffCloudCloud,
+    FeatureFlag::OrchestrationUnifiedStack,
+    FeatureFlag::WaitForEventsParentRegistration,
+    FeatureFlag::IntegrationCommand,
+    FeatureFlag::ArtifactCommand,
+    // Warp Drive, session sharing, and the rest of the account surface.
+    FeatureFlag::WarpAccount,
+    FeatureFlag::CloudObjects,
+    FeatureFlag::ViewingSharedSessions,
+    FeatureFlag::CreatingSharedSessions,
+    FeatureFlag::SessionSharingAcls,
+    FeatureFlag::SharedWithMe,
+    FeatureFlag::SharedSessionWriteToLongRunningCommands,
+    FeatureFlag::WarpPacks,
+    FeatureFlag::WarpManagedSecrets,
+    FeatureFlag::GitCredentialRefresh,
+    FeatureFlag::AvatarInTabBar,
+    // Anything that reports back or updates itself.
+    FeatureFlag::GlobalAIAnalyticsCollection,
+    FeatureFlag::GlobalAIAnalyticsBanner,
+    FeatureFlag::Autoupdate,
+    FeatureFlag::AutoupdateUIRevamp,
+    FeatureFlag::Changelog,
+    FeatureFlag::CrashReporting,
+    FeatureFlag::CocoaSentry,
+    FeatureFlag::LogExpensiveFramesInSentry,
+    FeatureFlag::RecordAppActiveEvents,
+    FeatureFlag::FetchChannelVersionsFromWarpServer,
+];
+
 /// Mark all features which should be enabled on the current channel as enabled.
 /// This sets global feature flag state and should never be called in a unit test.
 pub fn init_feature_flags() {
+    let disabled = ChannelState::disabled_features();
     for flag in enabled_features() {
         flag.set_enabled(true);
+    }
+    // Applied last so it also wins over `RELEASE_FLAGS` and anything a channel
+    // added on top. Server-side experiments can still flip these back on, but
+    // a channel that disables them has no server to hear from.
+    for flag in disabled {
+        flag.set_enabled(false);
     }
     mark_initialized();
 }
@@ -521,6 +731,10 @@ fn enabled_features() -> HashSet<FeatureFlag> {
         FeatureFlag::OscHyperlinks,
         #[cfg(feature = "terminal_lifecycle_recovery")]
         FeatureFlag::TerminalLifecycleRecovery,
+        #[cfg(feature = "warp_account")]
+        FeatureFlag::WarpAccount,
+        #[cfg(feature = "first_run_banners")]
+        FeatureFlag::FirstRunBanners,
     ]);
 
     flags

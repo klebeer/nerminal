@@ -31,16 +31,23 @@ pub struct ChannelState {
     /// The set of additional features to enable (on top of default-enabled ones).
     additional_features: HashSet<FeatureFlag>,
 
+    /// The set of features to force off, applied after every other source has
+    /// been resolved. Cargo features are additive, so a channel that ships a
+    /// reduced product surface cannot express it by subtracting from
+    /// `default`; this is the subtraction.
+    disabled_features: HashSet<FeatureFlag>,
+
     config: ChannelConfig,
 }
 
 impl ChannelState {
     pub fn init() -> Self {
         let channel = Channel::Oss;
-        let app_id = AppId::new("dev", "warp", "WarpOss");
+        let app_id = AppId::new("com", "klebeer", "Nerminal");
         Self {
             channel,
             additional_features: Default::default(),
+            disabled_features: Default::default(),
             config: ChannelConfig {
                 app_id,
                 logfile_name: "".into(),
@@ -68,12 +75,18 @@ impl ChannelState {
         Self {
             channel,
             additional_features: Default::default(),
+            disabled_features: Default::default(),
             config,
         }
     }
 
     pub fn with_additional_features(mut self, overrides: &[FeatureFlag]) -> Self {
         self.additional_features.extend(overrides);
+        self
+    }
+
+    pub fn with_disabled_features(mut self, overrides: &[FeatureFlag]) -> Self {
+        self.disabled_features.extend(overrides);
         self
     }
 
@@ -165,6 +178,15 @@ impl ChannelState {
         CHANNEL_STATE
             .lock()
             .additional_features
+            .iter()
+            .cloned()
+            .collect()
+    }
+
+    pub fn disabled_features() -> HashSet<FeatureFlag> {
+        CHANNEL_STATE
+            .lock()
+            .disabled_features
             .iter()
             .cloned()
             .collect()
@@ -396,7 +418,7 @@ impl ChannelState {
             // Dummy value--integration tests shouldn't support URL schemes.
             Channel::Integration => "warpintegration",
             Channel::Local => "warplocal",
-            Channel::Oss => "warposs",
+            Channel::Oss => "nerminal",
         }
     }
 }

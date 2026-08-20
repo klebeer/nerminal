@@ -1,6 +1,6 @@
 [package]
 authors = ["Warp Team <dev@warp.dev>"]
-default-run = "warp-oss"
+default-run = "nerminal"
 description = "The cloud-backed terminal for individuals and teams"
 edition = "2024"
 autobins = false
@@ -18,8 +18,8 @@ path = "src/lib.rs"
 # flag overrides). Otherwise these binaries are exactly identical to our main binary.
 
 [[bin]]
-name = "warp-oss"
-path = "src/bin/oss.rs"
+name = "nerminal"
+path = "src/bin/nerminal.rs"
 test = false
 
 [[bin]]
@@ -513,8 +513,12 @@ cross_repo_context = []
 codebase_index_persistence = ["full_source_code_embedding"]
 well_known_mcp_ids = []
 factory_mcp = []
+warp_account = []
+first_run_banners = []
 default = [
     "agent_mode",
+    "warp_account",
+    "first_run_banners",
     "osc_hyperlinks",
     "viewing_shared_sessions",
     "render_continuous_block_selections_with_single_border",
@@ -1054,14 +1058,14 @@ git_credential_refresh = []
 prompt_cache_expiry_warning = []
 osc_hyperlinks = []
 
-[package.metadata.bundle.bin.warp-oss]
+[package.metadata.bundle.bin.nerminal]
 category = "public.app-category.developer-tools"
-copyright = "© 2025, Denver Technologies, Inc"
-identifier = "dev.warp.WarpOss"
-name = "WarpOss"
+copyright = "© 2026 Kleber Ayala. Based on Warp, © 2020-2026 Denver Technologies, Inc. AGPL-3.0-only."
+identifier = "com.klebeer.Nerminal"
+name = "Nerminal"
 resources = ["assets/onboarding"]
 icon = ["channels/oss/icon/no-padding/512x512.png", "channels/oss/icon/no-padding/icon.ico"]
-short_description = "The open-source, cloud-backed terminal for individuals and teams."
+short_description = "A terminal with glasses. No agent, no account, no network."
 
 [package.metadata.bundle.bin.stable]
 category = "public.app-category.developer-tools"

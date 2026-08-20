@@ -28,6 +28,9 @@ use crate::channel::{Channel, ChannelState};
 /// repository workflows would be stored (in "./.warp/workflows").
 pub const WARP_CONFIG_DIR: &str = ".warp";
 
+/// Home-relative config directory for the OSS channel, which ships as Nerminal.
+pub const NERMINAL_CONFIG_DIR: &str = ".nerminal";
+
 /// The name of the folder that stores Warp execution logs and network logs.
 /// This is currently only used on Windows to maintain backwards compatibility.
 pub const WARP_LOGS_DIR: &str = "logs";
@@ -37,7 +40,7 @@ fn base_warp_config_dir_name() -> String {
         // Preview shares the same directory as Stable for backward
         // compatibility — existing users already have config in `.warp`.
         Channel::Stable | Channel::Preview => WARP_CONFIG_DIR.to_owned(),
-        Channel::Oss => format!("{WARP_CONFIG_DIR}-oss"),
+        Channel::Oss => NERMINAL_CONFIG_DIR.to_owned(),
         Channel::Dev => format!("{WARP_CONFIG_DIR}-dev"),
         Channel::Integration => format!("{WARP_CONFIG_DIR}-integration"),
         Channel::Local => format!("{WARP_CONFIG_DIR}-local"),
@@ -101,7 +104,7 @@ fn macos_config_dir_name_for(channel: Channel, data_profile: Option<&str>) -> St
     let base_dir_name = match channel {
         Channel::Stable => WARP_CONFIG_DIR.to_owned(),
         Channel::Preview => format!("{WARP_CONFIG_DIR}-preview"),
-        Channel::Oss => format!("{WARP_CONFIG_DIR}-oss"),
+        Channel::Oss => NERMINAL_CONFIG_DIR.to_owned(),
         Channel::Dev => format!("{WARP_CONFIG_DIR}-dev"),
         Channel::Integration => format!("{WARP_CONFIG_DIR}-integration"),
         Channel::Local => format!("{WARP_CONFIG_DIR}-local"),
@@ -132,11 +135,11 @@ pub fn data_dir() -> PathBuf {
 ///
 /// Most TUI channel binaries use the same application ID as the GUI. The OSS
 /// TUI is the exception: it uses `WarpTui`, while the corresponding GUI uses
-/// `WarpOss`.
+/// `Nerminal`.
 #[cfg(any(not(target_os = "macos"), test))]
 fn gui_app_id_for_channel(channel: Channel, current_app_id: AppId) -> AppId {
     match channel {
-        Channel::Oss => AppId::new("dev", "warp", "WarpOss"),
+        Channel::Oss => AppId::new("com", "klebeer", "Nerminal"),
         Channel::Stable
         | Channel::Preview
         | Channel::Dev
@@ -212,7 +215,18 @@ pub fn gui_mcp_config_file_path() -> Option<PathBuf> {
 /// changed once established.
 #[cfg(target_os = "macos")]
 fn macos_tui_config_dir_name() -> String {
-    macos_config_dir_name().replacen(WARP_CONFIG_DIR, ".warp_cli", 1)
+    // Derived from the GUI name by suffixing its base, so the two stay siblings
+    // whatever the channel calls itself. The base has to be looked up rather
+    // than assumed: the OSS channel's is `.nerminal`, not `.warp`.
+    let base = match ChannelState::channel() {
+        Channel::Oss => NERMINAL_CONFIG_DIR,
+        Channel::Stable
+        | Channel::Preview
+        | Channel::Dev
+        | Channel::Integration
+        | Channel::Local => WARP_CONFIG_DIR,
+    };
+    macos_config_dir_name().replacen(base, &format!("{base}_cli"), 1)
 }
 
 /// Returns the path to the directory where non-portable configuration files for
@@ -372,7 +386,6 @@ fn project_dirs_for_app_id(
             // match our Linux package name.
             let base_app_name = match app_id.application_name() {
                 "Warp" => "Warp-Terminal".to_owned(),
-                "WarpOss" => "Warp-Oss".to_owned(),
                 other if other.starts_with("Warp") => other.replace("Warp", "Warp-Terminal-"),
                 _ => app_id.application_name().to_owned(),
             };

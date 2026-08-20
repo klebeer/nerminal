@@ -13683,7 +13683,8 @@ impl TerminalView {
         self.is_login_shell_bootstrapped = true;
         self.hide_slow_bootstrap_banner(ctx);
 
-        if self.auth_state.is_anonymous_or_logged_out()
+        if FeatureFlag::AgentMode.is_enabled()
+            && self.auth_state.is_anonymous_or_logged_out()
             && !FeatureFlag::OpenWarpNewSettingsModes.is_enabled()
         {
             self.insert_anonymous_user_ai_sign_up_banner(ctx);
@@ -13928,6 +13929,10 @@ impl TerminalView {
         session: &Arc<Session>,
         ctx: &mut ViewContext<Self>,
     ) -> bool {
+        if !FeatureFlag::FirstRunBanners.is_enabled() {
+            return false;
+        }
+
         // Is this the active session?
         // We should only show the vim keybindings banner in one place at a time.
         if !self.is_active_session(ctx) {
@@ -15862,6 +15867,10 @@ impl TerminalView {
     }
 
     fn can_suggest_alias_expansion(&mut self, ctx: &mut ViewContext<TerminalView>) -> bool {
+        if !FeatureFlag::FirstRunBanners.is_enabled() {
+            return false;
+        }
+
         let has_user_seen_banner: bool = ctx
             .private_user_preferences()
             .read_value(ALIAS_EXPANSION_BANNER_SEEN_KEY)

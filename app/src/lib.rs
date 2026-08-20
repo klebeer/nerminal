@@ -1850,9 +1850,7 @@ pub(crate) fn initialize_app(
     });
 
     #[cfg(target_os = "macos")]
-    if !launch_mode.is_headless() {
-        AppearanceManager::as_ref(ctx).set_app_icon(ctx);
-    }
+    if !launch_mode.is_headless() {}
 
     #[cfg(feature = "local_tty")]
     terminal::available_shells::register(ctx);

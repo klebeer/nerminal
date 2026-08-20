@@ -23,7 +23,6 @@ use warp_errors::report_error;
 use warpui::{AppContext, ModelContext, SingletonEntity};
 
 use super::{DownloadReady, release_assets_directory_url};
-use crate::appearance::AppearanceManager;
 use crate::autoupdate::{AutoupdateStage, AutoupdateState};
 use crate::channel::{Channel, ChannelState};
 use crate::safe_info;
@@ -117,7 +116,6 @@ where
                     move |autoupdate_state, result, ctx| {
                         if result.is_ok() {
                             // Reset app icon to previously selected app icon
-                            AppearanceManager::as_ref(ctx).set_app_icon(ctx);
                         }
                         autoupdate_state.clear_downloaded_update(&update_id_clone, ctx);
                         callback(autoupdate_state, result, ctx);
@@ -734,7 +732,7 @@ fn app_name_prefix(channel: Channel) -> &'static str {
         Channel::Local => "warp",
         Channel::Integration => "integration",
         Channel::Dev => "WarpDev",
-        Channel::Oss => "warp-oss",
+        Channel::Oss => "Nerminal",
     }
 }
 
@@ -745,7 +743,7 @@ fn executable_name(channel: Channel) -> &'static str {
         Channel::Local => "warp",
         Channel::Integration => "integration",
         Channel::Dev => "dev",
-        Channel::Oss => "warp-oss",
+        Channel::Oss => "nerminal",
     }
 }
 

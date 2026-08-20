@@ -1394,9 +1394,20 @@ impl SettingsView {
 
         // Build sidebar nav items. Umbrellas group their subpages here and
         // nowhere else, so this list is the only place membership is declared.
-        let mut nav_items = vec![
-            SettingsNavItem::Page(SettingsSection::Account),
-            SettingsNavItem::Umbrella(SettingsUmbrella::new(
+        //
+        // A build without a Warp account or without the agent has nothing to
+        // configure on the pages that belong to them, so those entries are
+        // omitted rather than shown in a permanently inert state.
+        let has_account = FeatureFlag::WarpAccount.is_enabled();
+        let has_agent = FeatureFlag::AgentMode.is_enabled();
+
+        let mut nav_items = Vec::new();
+
+        if has_account {
+            nav_items.push(SettingsNavItem::Page(SettingsSection::Account));
+        }
+        if has_agent {
+            nav_items.push(SettingsNavItem::Umbrella(SettingsUmbrella::new(
                 "Agents",
                 vec![
                     SettingsSection::WarpAgent,
@@ -1405,33 +1416,49 @@ impl SettingsView {
                     SettingsSection::Knowledge,
                     SettingsSection::ThirdPartyCLIAgents,
                 ],
-            )),
-            SettingsNavItem::Page(SettingsSection::BillingAndUsage),
-            SettingsNavItem::Umbrella(SettingsUmbrella::new(
+            )));
+        }
+        if has_account {
+            nav_items.push(SettingsNavItem::Page(SettingsSection::BillingAndUsage));
+        }
+        if has_agent {
+            nav_items.push(SettingsNavItem::Umbrella(SettingsUmbrella::new(
                 "Code",
                 vec![
                     SettingsSection::CodeIndexing,
                     SettingsSection::EditorAndCodeReview,
                 ],
-            )),
-            SettingsNavItem::Umbrella(SettingsUmbrella::new(
-                "Cloud platform",
-                vec![
-                    SettingsSection::CloudEnvironments,
-                    SettingsSection::OzCloudAPIKeys,
-                ],
-            )),
-            SettingsNavItem::Page(SettingsSection::Teams),
+            )));
+        }
+        if has_account {
+            nav_items.extend([
+                SettingsNavItem::Umbrella(SettingsUmbrella::new(
+                    "Cloud platform",
+                    vec![
+                        SettingsSection::CloudEnvironments,
+                        SettingsSection::OzCloudAPIKeys,
+                    ],
+                )),
+                SettingsNavItem::Page(SettingsSection::Teams),
+            ]);
+        }
+        nav_items.extend([
             SettingsNavItem::Page(SettingsSection::Appearance),
             SettingsNavItem::Page(SettingsSection::Features),
             SettingsNavItem::Page(SettingsSection::Keybindings),
             SettingsNavItem::Page(SettingsSection::Warpify),
-            SettingsNavItem::Page(SettingsSection::Referrals),
-            SettingsNavItem::Page(SettingsSection::SharedBlocks),
-            SettingsNavItem::Page(SettingsSection::WarpDrive),
+        ]);
+        if has_account {
+            nav_items.extend([
+                SettingsNavItem::Page(SettingsSection::Referrals),
+                SettingsNavItem::Page(SettingsSection::SharedBlocks),
+                SettingsNavItem::Page(SettingsSection::WarpDrive),
+            ]);
+        }
+        nav_items.extend([
             SettingsNavItem::Page(SettingsSection::Privacy),
             SettingsNavItem::Page(SettingsSection::About),
-        ];
+        ]);
 
         if FeatureFlag::WarpControlCli.is_enabled() {
             let shared_blocks_index = nav_items
@@ -1446,11 +1473,27 @@ impl SettingsView {
             );
         }
 
+        // Landing page, and the fallback for a requested page this build does
+        // not have. Account is the first entry when it exists; otherwise the
+        // first entry that always does.
+        let default_page = if has_account {
+            SettingsSection::Account
+        } else {
+            SettingsSection::Appearance
+        };
+        let is_navigable = |section: SettingsSection| {
+            nav_items.iter().any(|item| match item {
+                SettingsNavItem::Page(page) => *page == section,
+                SettingsNavItem::Umbrella(umbrella) => umbrella.contains(section),
+            })
+        };
         let initial_page = match page {
             Some(SettingsSection::Scripting) if !FeatureFlag::WarpControlCli.is_enabled() => {
-                SettingsSection::Account
+                default_page
             }
-            other => other.unwrap_or_default(),
+            Some(page) if is_navigable(page) => page,
+            Some(_) => default_page,
+            None => default_page,
         };
 
         // Auto-expand the umbrella if the initial page is one of its subpages.
@@ -2025,6 +2068,29 @@ impl SettingsView {
         settings_page
     }
 
+    /// Whether `section` is reachable from this build's sidebar.
+    ///
+    /// The backing page for every section is always constructed, so a section
+    /// whose nav entry is omitted is still openable by anything that names it
+    /// directly — session restore, a deeplink, `warpctrl`. Those land on the
+    /// sidebar's first page instead.
+    fn is_navigable(&self, section: SettingsSection) -> bool {
+        self.nav_items.iter().any(|item| match item {
+            SettingsNavItem::Page(page) => *page == section,
+            SettingsNavItem::Umbrella(umbrella) => umbrella.contains(section),
+        })
+    }
+
+    fn landing_page(&self) -> SettingsSection {
+        self.nav_items
+            .iter()
+            .find_map(|item| match item {
+                SettingsNavItem::Page(page) => Some(*page),
+                SettingsNavItem::Umbrella(_) => None,
+            })
+            .unwrap_or_default()
+    }
+
     pub fn set_and_refresh_current_page_internal(
         &mut self,
         section: SettingsSection,
@@ -2032,6 +2098,12 @@ impl SettingsView {
         allow_steal_focus: bool,
         ctx: &mut ViewContext<Self>,
     ) {
+        let section = if self.is_navigable(section) {
+            section
+        } else {
+            self.landing_page()
+        };
+
         // Every nav target owns its backing page. Check it exists.
         if self.settings_page(section).is_none() {
             return;

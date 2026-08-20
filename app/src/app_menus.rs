@@ -63,18 +63,26 @@ const MAX_RECENT_REPOS_IN_MENU: usize = 10;
 
 /// Creates the root app menu bar
 pub fn menu_bar(ctx: &mut AppContext) -> MenuBar {
-    MenuBar::new(vec![
+    let mut menus = vec![
         make_new_app_menu(ctx),
         make_new_file_menu(ctx),
         make_new_edit_menu(ctx),
         make_new_view_menu(ctx),
         make_new_tab_menu(ctx),
         make_new_blocks_menu(ctx),
-        make_new_ai_menu(ctx),
+    ];
+
+    if FeatureFlag::AgentMode.is_enabled() {
+        menus.push(make_new_ai_menu(ctx));
+    }
+
+    menus.extend([
         make_new_drive_menu(ctx),
         make_new_window_menu(),
         make_new_help_menu(),
-    ])
+    ]);
+
+    MenuBar::new(menus)
 }
 
 // Creates the app dock menu
@@ -136,6 +144,17 @@ fn updateable_custom_item_with_checkmark(
 /// and is always unchecked
 fn updateable_custom_item_without_checkmark(action: CustomAction, ctx: &AppContext) -> MenuItem {
     updateable_custom_item_with_checkmark(action, ctx, Box::new(|_| false))
+}
+
+/// Like [`updateable_custom_item_without_checkmark`], but yields nothing when
+/// the action has no binding in this build.
+///
+/// A binding registered with `with_enabled` disappears when its feature flag is
+/// off, taking the action's description with it. Entries for those actions have
+/// to be dropped rather than rendered nameless.
+fn optional_updateable_custom_item(action: CustomAction, ctx: &AppContext) -> Option<MenuItem> {
+    ctx.description_for_custom_action(action.into(), bindings::MAC_MENUS_CONTEXT)?;
+    Some(updateable_custom_item_without_checkmark(action, ctx))
 }
 
 fn make_new_app_menu(ctx: &AppContext) -> Menu {
@@ -210,7 +229,7 @@ fn make_new_app_menu(ctx: &AppContext) -> Menu {
     menu_items.push(MenuItem::Standard(StandardAction::ShowAllApps));
     menu_items.push(MenuItem::Separator);
     menu_items.push(MenuItem::Custom(CustomMenuItem::new(
-        "Set Warp as Default Terminal",
+        "Set Nerminal as Default Terminal",
         move |ctx| {
             DefaultTerminal::handle(ctx).update(ctx, |default_terminal, ctx| {
                 default_terminal.make_warp_default(ctx)
@@ -245,7 +264,7 @@ fn make_new_app_menu(ctx: &AppContext) -> Menu {
         None,
     )));
     menu_items.push(MenuItem::Standard(StandardAction::Quit));
-    Menu::new("Warp", menu_items)
+    Menu::new("Nerminal", menu_items)
 }
 
 fn make_new_file_menu(ctx: &AppContext) -> Menu {
@@ -301,7 +320,7 @@ fn make_new_edit_menu(ctx: &AppContext) -> Menu {
     ];
     let group_5 = vec![
         MenuItem::Custom(CustomMenuItem::new(
-            "Use Warp's Prompt",
+            "Use Nerminal's Prompt",
             move |ctx| ctx.dispatch_global_action("app:toggle_user_ps1", &()),
             move |_props, ctx| MenuItemPropertyChanges {
                 checked: Some(
@@ -382,7 +401,14 @@ fn make_new_view_menu(ctx: &AppContext) -> Menu {
         updateable_custom_item_without_checkmark(CustomAction::LaunchConfigPalette, ctx),
         updateable_custom_item_without_checkmark(CustomAction::FilesPalette, ctx),
         updateable_custom_item_without_checkmark(CustomAction::ToggleProjectExplorer, ctx),
-        updateable_custom_item_without_checkmark(CustomAction::ToggleConversationListView, ctx),
+    ];
+
+    items.extend(optional_updateable_custom_item(
+        CustomAction::ToggleConversationListView,
+        ctx,
+    ));
+
+    items.extend([
         updateable_custom_item_without_checkmark(CustomAction::ToggleGlobalSearch, ctx),
         MenuItem::Separator,
         updateable_custom_item_without_checkmark(CustomAction::History, ctx),
@@ -435,7 +461,7 @@ fn make_new_view_menu(ctx: &AppContext) -> Menu {
             },
             None,
         )),
-    ];
+    ]);
 
     let is_compact_mode = matches!(
         TerminalSettings::handle(ctx)
@@ -610,9 +636,15 @@ fn make_new_drive_menu(ctx: &AppContext) -> Menu {
         updateable_custom_item_without_checkmark(CustomAction::ToggleWarpDrive, ctx),
         updateable_custom_item_without_checkmark(CustomAction::SearchDrive, ctx),
         updateable_custom_item_without_checkmark(CustomAction::OpenTeamSettings, ctx),
-        updateable_custom_item_without_checkmark(CustomAction::OpenAIFactCollection, ctx),
-        updateable_custom_item_without_checkmark(CustomAction::OpenMCPServerCollection, ctx),
     ]);
+    items.extend(optional_updateable_custom_item(
+        CustomAction::OpenAIFactCollection,
+        ctx,
+    ));
+    items.extend(optional_updateable_custom_item(
+        CustomAction::OpenMCPServerCollection,
+        ctx,
+    ));
 
     items.push(updateable_custom_item_without_checkmark(
         CustomAction::SharePaneContents,

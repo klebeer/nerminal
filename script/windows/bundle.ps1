@@ -129,9 +129,9 @@ if ("$CHANNEL" -eq 'local') {
     $BINARY_NAME = 'warp.exe'
     $APP_NAME = 'Warp'
 } elseif ("$CHANNEL" -eq 'oss') {
-    $WARP_BIN = 'warp-oss'
-    $BINARY_NAME = 'warp-oss.exe'
-    $APP_NAME = 'WarpOss'
+    $WARP_BIN = 'nerminal'
+    $BINARY_NAME = 'nerminal.exe'
+    $APP_NAME = 'Nerminal'
     # The OSS channel does not ship Sentry, so drop the crash_reporting feature
     # (which would otherwise pull in the Sentry SDK as a dependency).
     $FEATURES = 'release_bundle,gui'
@@ -156,7 +156,7 @@ if ($IS_TUI) {
         'dev' { 'warp-dev' }
         'preview' { 'warp-preview' }
         'stable' { 'warp' }
-        'oss' { 'warp-oss' }
+        'oss' { 'nerminal' }
     }
     $INSTALL_DIR_NAME = switch ($CHANNEL) {
         'local' { 'tui-local' }

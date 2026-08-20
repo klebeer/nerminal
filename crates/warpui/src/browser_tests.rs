@@ -23,7 +23,7 @@ fn safe_browser_open_url_accepts_warp_channel_urls() {
         "warppreview",
         "warpdev",
         "warplocal",
-        "warposs",
+        "nerminal",
         "warpintegration",
     ] {
         let url = format!("{scheme}://action/focus_cloud_mode");

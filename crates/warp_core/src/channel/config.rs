@@ -63,7 +63,27 @@ impl WarpServerConfig {
             iap_config: None,
         }
     }
+
+    /// URLs for a build with no Warp backend. The URLs still have to parse, and
+    /// several call sites `expect()` that, so they point at the loopback discard
+    /// port instead of being empty. Loopback rather than a non-routable public
+    /// address so a stray request fails instantly with connection-refused and
+    /// never leaves the machine.
+    pub fn offline() -> Self {
+        Self {
+            server_root_url: OFFLINE_HTTP_URL.into(),
+            rtc_server_url: OFFLINE_WS_URL.into(),
+            session_sharing_server_url: None,
+            firebase_auth_api_key: "".into(),
+            iap_config: None,
+        }
+    }
 }
+
+/// Loopback discard port. Nothing listens here, so a connection is refused by
+/// the kernel without a packet reaching any interface.
+const OFFLINE_HTTP_URL: &str = "http://127.0.0.1:9";
+const OFFLINE_WS_URL: &str = "ws://127.0.0.1:9";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OzConfig {
@@ -80,6 +100,14 @@ impl OzConfig {
     pub fn production() -> Self {
         Self {
             oz_root_url: "https://oz.warp.dev".into(),
+            workload_audience_url: None,
+        }
+    }
+
+    /// See [`WarpServerConfig::offline`].
+    pub fn offline() -> Self {
+        Self {
+            oz_root_url: OFFLINE_HTTP_URL.into(),
             workload_audience_url: None,
         }
     }

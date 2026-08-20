@@ -115,7 +115,7 @@ impl SettingsWidget for AboutPageWidget {
                 .with_child(version_row.finish())
                 .with_child(
                     ui_builder
-                        .span("Copyright 2026 Warp")
+                        .span("Copyright 2026 Kleber Ayala. Based on Warp, (c) Denver Technologies, Inc.")
                         .build()
                         .with_margin_top(16.)
                         .finish(),

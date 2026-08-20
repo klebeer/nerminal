@@ -5573,6 +5573,7 @@ fn test_bash_vim_banner_already_shown() {
 fn test_bash_vim_banner_on() {
     App::test((), |mut app| async move {
         initialize_app_for_terminal_view(&mut app);
+        let _first_run_banners = FeatureFlag::FirstRunBanners.override_enabled(true);
         let terminal =
             MockTerminalManager::create_new_terminal_view_window_for_test(&mut app, None);
 
@@ -5686,6 +5687,7 @@ fn test_bash_vim_banner_off() {
 fn test_zsh_vim_banner_on() {
     App::test((), |mut app| async move {
         initialize_app_for_terminal_view(&mut app);
+        let _first_run_banners = FeatureFlag::FirstRunBanners.override_enabled(true);
         let terminal =
             MockTerminalManager::create_new_terminal_view_window_for_test(&mut app, None);
 
@@ -5799,6 +5801,7 @@ fn test_zsh_vim_banner_off() {
 fn test_fish_vim_banner_on() {
     App::test((), |mut app| async move {
         initialize_app_for_terminal_view(&mut app);
+        let _first_run_banners = FeatureFlag::FirstRunBanners.override_enabled(true);
         let terminal =
             MockTerminalManager::create_new_terminal_view_window_for_test(&mut app, None);
 

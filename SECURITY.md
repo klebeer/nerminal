@@ -1,14 +1,19 @@
 # Security Policy
 
-We take security seriously at Warp and appreciate the efforts of security researchers who help keep our users safe.
+## Reporting a vulnerability
 
-## Reporting a Vulnerability
+If the issue is in Nerminal's own changes, report it privately through this
+repository's [security advisories](https://github.com/klebeer/nerminal/security/advisories/new).
+Please do not open a public issue or pull request first.
 
-If you believe you've found a security vulnerability, please follow responsible disclosure practices and **do not** open a public GitHub issue or pull request, as this could expose the vulnerability before a fix is available.
+If the issue is in Warp itself and also affects upstream, report it to the Warp
+team at security@warp.dev or through
+[their advisory form](https://github.com/warpdotdev/Warp/security/advisories/new).
+Nerminal cannot fix upstream code for anyone but its own users.
 
-Instead, please report it through one of the following channels:
+## Scope
 
-- **Email:** [security@warp.dev](mailto:security@warp.dev)
-- **GitHub Security Advisory:** [Open a private advisory](https://github.com/warpdotdev/Warp/security/advisories/new)
-
-We will acknowledge your report promptly and work with you to understand and resolve the issue as quickly as possible.
+Nerminal makes no network requests: its server URLs point at the loopback
+discard port and telemetry, crash reporting and autoupdate are compiled out of
+the shipped configuration. Reports that depend on Nerminal contacting a remote
+host are almost certainly describing upstream Warp instead.

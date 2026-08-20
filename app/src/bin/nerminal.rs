@@ -6,21 +6,27 @@ use anyhow::Result;
 use warp_core::AppId;
 use warp_core::channel::{Channel, ChannelConfig, ChannelState, OzConfig, WarpServerConfig};
 
-// Simple wrapper around warp::run() for Warp OSS builds.
+// Entry point for Nerminal, this fork's build of the OSS channel.
+//
+// It ships the terminal only. The agent, MCP, Warp Drive and the account that
+// backs them are disabled (`warp::features::OSS_DISABLED_FLAGS`), and the
+// server URLs point at the loopback discard port so nothing can reach Warp's
+// backend even if a code path is missed.
 fn main() -> Result<()> {
     let mut state = ChannelState::new(
         Channel::Oss,
         ChannelConfig {
-            app_id: AppId::new("dev", "warp", "WarpOss"),
-            logfile_name: "warp-oss.log".into(),
-            server_config: WarpServerConfig::production(),
-            oz_config: OzConfig::production(),
+            app_id: AppId::new("com", "klebeer", "Nerminal"),
+            logfile_name: "nerminal.log".into(),
+            server_config: WarpServerConfig::offline(),
+            oz_config: OzConfig::offline(),
             telemetry_config: None,
             crash_reporting_config: None,
             autoupdate_config: None,
             mcp_static_config: None,
         },
-    );
+    )
+    .with_disabled_features(warp::features::OSS_DISABLED_FLAGS);
     if cfg!(debug_assertions) {
         state = state.with_additional_features(warp_core::features::DEBUG_FLAGS);
     }
@@ -39,15 +45,15 @@ embed_plist::embed_info_plist_bytes!(r#"
     <key>CFBundleDevelopmentRegion</key>
     <string>English</string>
     <key>CFBundleDisplayName</key>
-    <string>WarpOss</string>
+    <string>Nerminal</string>
     <key>CFBundleExecutable</key>
-    <string>warp-oss</string>
+    <string>nerminal</string>
     <key>CFBundleIdentifier</key>
-    <string>dev.warp.WarpOss</string>
+    <string>com.klebeer.Nerminal</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>WarpOss</string>
+    <string>Nerminal</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -59,9 +65,9 @@ embed_plist::embed_info_plist_bytes!(r#"
     <key>UIDesignRequiresCompatibility</key>
     <true/>
     <key>CFBundleURLTypes</key>
-    <array><dict><key>CFBundleURLName</key><string>Custom App</string><key>CFBundleURLSchemes</key><array><string>warposs</string></array></dict></array>
+    <array><dict><key>CFBundleURLName</key><string>Custom App</string><key>CFBundleURLSchemes</key><array><string>nerminal</string></array></dict></array>
     <key>NSHumanReadableCopyright</key>
-    <string>© 2026, Denver Technologies, Inc</string>
+    <string>© 2026 Kleber Ayala. Based on Warp, © 2020-2026 Denver Technologies, Inc. Licensed under AGPL-3.0-only.</string>
     </dict>
     </plist>
 "#.as_bytes());
