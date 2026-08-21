@@ -61,10 +61,16 @@ impl SettingsWidget for AboutPageWidget {
     ) -> Box<dyn Element> {
         let ui_builder = appearance.ui_builder();
 
-        let version = ChannelState::app_version().unwrap_or("v#.##.###");
+        let version = ChannelState::app_version().unwrap_or("dev build");
+        // Releases are named as well as numbered, so show both when the build
+        // carries a codename.
+        let version_label = match ChannelState::app_codename() {
+            Some(codename) => format!("{version}  \u{201c}{codename}\u{201d}"),
+            None => version.to_string(),
+        };
 
         let version_text = ui_builder
-            .span(version.to_string())
+            .span(version_label)
             .with_soft_wrap()
             .build()
             .with_margin_top(16.)

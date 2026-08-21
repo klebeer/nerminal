@@ -368,6 +368,12 @@ impl ChannelState {
         option_env!("GIT_RELEASE_TAG")
     }
 
+    /// The release codename, set at build time alongside the version tag.
+    /// Releases are named alphabetically; see `script/release`.
+    pub fn app_codename() -> Option<&'static str> {
+        option_env!("NERMINAL_CODENAME")
+    }
+
     pub fn sentry_url() -> Cow<'static, str> {
         CHANNEL_STATE
             .lock()
