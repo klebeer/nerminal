@@ -17,7 +17,7 @@ if [[ -z "$NERMINAL_PLIST_PATH" ]]; then
 fi
 
 if [[ -n "$GIT_RELEASE_TAG" ]]; then
-  echo "Updating plist Warp version to $GIT_RELEASE_TAG"
+  echo "Updating plist version to $GIT_RELEASE_TAG"
   plutil -insert WarpVersion -string "$GIT_RELEASE_TAG" "$NERMINAL_PLIST_PATH"
 
   # We convert our version format to be period-separated integers only to align better with
@@ -258,16 +258,16 @@ fi
 # https://blog.smittytone.net/2021/01/19/how-tools-try-to-own-markdown/
 
 echo "Updating plist with permissions descriptions"
-plutil -insert NSAppleEventsUsageDescription -string "A program in Warp wants to use AppleScript." "$NERMINAL_PLIST_PATH"
-plutil -insert NSCameraUsageDescription -string "A program in Warp wants to use the camera." "$NERMINAL_PLIST_PATH"
-plutil -insert NSMicrophoneUsageDescription -string "A program in Warp wants to use your microphone." "$NERMINAL_PLIST_PATH"
-plutil -insert NSContactsUsageDescription -string "A program in Warp wants to use your contacts." "$NERMINAL_PLIST_PATH"
-plutil -insert NSCalendarsUsageDescription -string "A program in Warp wants to use your calendar." "$NERMINAL_PLIST_PATH"
-plutil -insert NSCalendarsFullAccessUsageDescription -string "A program in Warp wants full access to your calendar." "$NERMINAL_PLIST_PATH"
-plutil -insert NSRemindersUsageDescription -string "A program in Warp wants to use your reminders." "$NERMINAL_PLIST_PATH"
-plutil -insert NSRemindersFullAccessUsageDescription -string "A program in Warp wants full access to your reminders." "$NERMINAL_PLIST_PATH"
-plutil -insert NSLocationUsageDescription -string "A program in Warp wants to use your location information." "$NERMINAL_PLIST_PATH"
-plutil -insert NSPhotoLibraryUsageDescription -string "A program in Warp wants to use your photo library." "$NERMINAL_PLIST_PATH"
+plutil -insert NSAppleEventsUsageDescription -string "A program in Nerminal wants to use AppleScript." "$NERMINAL_PLIST_PATH"
+plutil -insert NSCameraUsageDescription -string "A program in Nerminal wants to use the camera." "$NERMINAL_PLIST_PATH"
+plutil -insert NSMicrophoneUsageDescription -string "A program in Nerminal wants to use your microphone." "$NERMINAL_PLIST_PATH"
+plutil -insert NSContactsUsageDescription -string "A program in Nerminal wants to use your contacts." "$NERMINAL_PLIST_PATH"
+plutil -insert NSCalendarsUsageDescription -string "A program in Nerminal wants to use your calendar." "$NERMINAL_PLIST_PATH"
+plutil -insert NSCalendarsFullAccessUsageDescription -string "A program in Nerminal wants full access to your calendar." "$NERMINAL_PLIST_PATH"
+plutil -insert NSRemindersUsageDescription -string "A program in Nerminal wants to use your reminders." "$NERMINAL_PLIST_PATH"
+plutil -insert NSRemindersFullAccessUsageDescription -string "A program in Nerminal wants full access to your reminders." "$NERMINAL_PLIST_PATH"
+plutil -insert NSLocationUsageDescription -string "A program in Nerminal wants to use your location information." "$NERMINAL_PLIST_PATH"
+plutil -insert NSPhotoLibraryUsageDescription -string "A program in Nerminal wants to use your photo library." "$NERMINAL_PLIST_PATH"
 
 echo "Disabling use of Liquid Glass on macOS Tahoe"
 plutil -insert UIDesignRequiresCompatibility -bool true "$NERMINAL_PLIST_PATH"
