@@ -94,14 +94,13 @@ fn initialize_ask_user_question_test(
     // Ensure asking questions is allowed by default regardless of compile-time profile
     // defaults (e.g. agent_mode_evals overrides ask_user_question to Never).
     profiles.update(app, |profiles, ctx| {
-        if let Some(profile_id) = profiles.create_profile(ctx) {
-            profiles.set_ask_user_question(
-                &profile_id,
-                AskUserQuestionPermission::AskExceptInAutoApprove,
-                ctx,
-            );
-            profiles.set_active_profile(terminal_view_id, profile_id, ctx);
-        }
+        let profile_id = profiles.default_profile_id();
+        profiles.set_ask_user_question(
+            &profile_id,
+            AskUserQuestionPermission::AskExceptInAutoApprove,
+            ctx,
+        );
+        profiles.set_active_profile(terminal_view_id, profile_id, ctx);
     });
     (history, profiles)
 }
@@ -270,9 +269,7 @@ fn should_autoexecute_uses_active_terminal_profile_permission() {
         });
 
         profiles.update(&mut app, |profiles, ctx| {
-            let profile_id = profiles
-                .create_profile(ctx)
-                .expect("test profile should be created");
+            let profile_id = profiles.default_profile_id();
             profiles.set_ask_user_question(&profile_id, AskUserQuestionPermission::Never, ctx);
             profiles.set_active_profile(terminal_view_id, profile_id, ctx);
         });

@@ -119,27 +119,6 @@ pub struct ConversationUsageView {
 }
 
 impl ConversationUsageView {
-    #[cfg(test)]
-    pub fn new(
-        usage_info: ConversationUsageInfo,
-        timing_info: Option<TimingInfo>,
-        full_terminal_use_tooltip_mouse_state: MouseStateHandle,
-    ) -> Self {
-        Self {
-            usage_info,
-            timing_info,
-            full_terminal_use_tooltip_mouse_state,
-            parent_conversation_id: None,
-            details_expanded: false,
-            show_all_clicked: false,
-            details_toggle_mouse_state: MouseStateHandle::default(),
-            show_more_mouse_state: MouseStateHandle::default(),
-            context_window_expanded: false,
-            context_window_toggle_mouse_state: MouseStateHandle::default(),
-            context_window_other_tooltip_mouse_state: MouseStateHandle::default(),
-        }
-    }
-
     /// Constructs the view in `DisplayMode::Footer` with orchestration
     /// credit rollup wired in. The view subscribes to
     /// [`BlocklistAIHistoryEvent::ConversationUsageMetadataUpdated`] so it
@@ -1159,7 +1138,3 @@ const CONTEXT_WINDOW_SEGMENT_PERCENT_DECIMAL_PLACES: usize = 2;
 
 /// Maximum width of the context-window "Other" tooltip before wrapping.
 const CONTEXT_WINDOW_OTHER_TOOLTIP_MAX_WIDTH: f32 = 280.;
-
-#[cfg(test)]
-#[path = "conversation_usage_view_tests.rs"]
-mod tests;

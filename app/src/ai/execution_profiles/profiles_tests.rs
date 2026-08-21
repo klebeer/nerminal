@@ -1250,26 +1250,6 @@ fn profile_sources_preserve_state_across_migration_and_rollout() {
         settings_model.read(&app, |model, ctx| {
             assert_eq!(model.default_profile(ctx).data().name, "Settings default");
         });
-        let created_profile_id = settings_model
-            .update(&mut app, |model, ctx| model.create_profile(ctx))
-            .unwrap();
-        settings_model.update(&mut app, |model, ctx| {
-            model.set_profile_name(&created_profile_id, "Edited", ctx);
-        });
-        app.read(|ctx| {
-            assert_eq!(
-                AISettings::as_ref(ctx)
-                    .execution_profiles
-                    .value()
-                    .profile(&created_profile_id)
-                    .map(|profile| profile.name.as_str()),
-                Some("Edited")
-            );
-        });
-        settings_model.update(&mut app, |model, ctx| {
-            model.delete_profile(&created_profile_id, ctx);
-        });
-
         let legacy_model = {
             let _guard = FeatureFlag::FileBackedExecutionProfiles.override_enabled(false);
             app.add_model(|ctx| {

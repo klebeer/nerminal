@@ -69,10 +69,9 @@ fn initialize_upload_artifact_test(
     app.add_singleton_model(BlocklistAIPermissions::new);
 
     profiles.update(app, |profiles, ctx| {
-        if let Some(profile_id) = profiles.create_profile(ctx) {
-            profiles.set_read_files(&profile_id, &ActionPermission::AlwaysAsk, ctx);
-            profiles.set_active_profile(terminal_view_id, profile_id, ctx);
-        }
+        let profile_id = profiles.default_profile_id();
+        profiles.set_read_files(&profile_id, &ActionPermission::AlwaysAsk, ctx);
+        profiles.set_active_profile(terminal_view_id, profile_id, ctx);
     });
 
     let sessions = app.add_model(|_| Sessions::new_for_test());

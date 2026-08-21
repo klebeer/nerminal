@@ -86,6 +86,13 @@ fn test_context_menu_items() {
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
         });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
+        });
 
         let sessions = app.add_model(|_| Sessions::new_for_test());
         let current_prompt = app.add_model(move |ctx| CurrentPrompt::new(sessions, ctx));
@@ -144,6 +151,13 @@ fn test_prompt_to_string() {
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
         });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
+        });
 
         let sessions = app.add_model(|_| Sessions::new_for_test());
         let current_prompt = app.add_model(move |ctx| CurrentPrompt::new(sessions, ctx));
@@ -199,6 +213,13 @@ fn test_fingerprint_skips_contextual_chip_recompute_when_context_is_unchanged() 
             settings::PrivatePreferences::new(
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
+        });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
         });
 
         let sessions = app.add_model(|_| Sessions::new_for_test());
@@ -267,6 +288,11 @@ fn test_shell_chip_is_disabled_when_required_executable_is_missing() {
         app.add_singleton_model(AuthManager::new_for_test);
         app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
         crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
+        });
         app.update(crate::settings::AISettings::register_and_subscribe_to_events);
         app.add_singleton_model(crate::workspaces::user_workspaces::UserWorkspaces::default_mock);
         #[cfg(windows)]
@@ -364,6 +390,13 @@ fn test_invalidating_command_count_unaffected_for_chips_without_invalidate_on_co
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
         });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
+        });
 
         let sessions = app.add_model(|_| Sessions::new_for_test());
         let current_prompt = app.add_model(move |ctx| CurrentPrompt::new(sessions, ctx));
@@ -446,6 +479,11 @@ fn test_disabling_chips() {
                     .input_box_type
                     .set_value(crate::settings::InputBoxType::Classic, ctx);
             });
+            // The second half of this test turns PS1 on to prove the chips stop,
+            // so the first half has to start from it being off.
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            });
         });
 
         executor.clear();
@@ -463,8 +501,8 @@ fn test_disabling_chips() {
             })
             .await;
 
-        // By default, context chips are enabled, so the git branch command should run. It may run
-        // twice due to how periodically-refreshing chips are implemented.
+        // With PS1 off the context chips are enabled, so the git branch command should run.
+        // It may run twice due to how periodically-refreshing chips are implemented.
         assert!(!executor.commands.lock().is_empty());
 
         // If PS1 is enabled, the command should not run.
@@ -769,6 +807,13 @@ fn test_externally_driven_chip_skips_periodic_timer() {
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
         });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
+        });
 
         let temp_dir = tempfile::TempDir::new().unwrap();
         let watcher_handle = app.add_singleton_model(DirectoryWatcher::new_for_testing);
@@ -829,6 +874,13 @@ fn test_git_status_change_updates_chip_value() {
             settings::PrivatePreferences::new(
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
+        });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
         });
 
         let temp_dir = tempfile::TempDir::new().unwrap();
@@ -900,6 +952,13 @@ fn test_git_status_change_updates_branch_status_chip_value() {
             settings::PrivatePreferences::new(
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
+        });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
         });
 
         let temp_dir = tempfile::TempDir::new().unwrap();
@@ -981,6 +1040,13 @@ fn test_git_status_pr_info_updates_github_pr_chip_value() {
             settings::PrivatePreferences::new(
                 Box::<user_preferences::in_memory::InMemoryPreferences>::default(),
             )
+        });
+        app.add_singleton_model(|_| crate::settings::manager::SettingsManager::default());
+        crate::settings::InputSettings::register(&mut app);
+        app.update(|ctx| {
+            SessionSettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.honor_ps1.set_value(false, ctx);
+            })
         });
 
         let temp_dir = tempfile::TempDir::new().unwrap();

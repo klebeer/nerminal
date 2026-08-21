@@ -31,13 +31,11 @@ fn test_resolve_command() {
         &resolve_executable("env").unwrap(),
         Path::new("/usr/bin/env")
     );
-    // This path exists in the Warp repo, so it should resolve. The `../`
-    // is because Rust unit tests run from the root of the crate (`app` in
-    // this case).
-    assert_eq!(
-        &resolve_executable("../script/run").unwrap(),
-        Path::new("../script/run")
-    );
+    // A real executable in the repo. Anchored to the crate directory rather
+    // than the process working directory, which another test can move: building
+    // a workspace runs `terminal::platform::init`, and that chdirs to $HOME.
+    let script = concat!(env!("CARGO_MANIFEST_DIR"), "/../script/run");
+    assert_eq!(&resolve_executable(script).unwrap(), Path::new(script));
     // `pwd` should always exist (it's also a shell builtin), but we won't
     // assume a specific location.
     assert!(resolve_executable("pwd").is_some());

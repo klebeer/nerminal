@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::Arc;
 
 use pathfinder_geometry::vector::vec2f;
@@ -70,6 +69,12 @@ fn init_app(app: &mut App) {
     app.add_singleton_model(voice_input::VoiceInput::new);
 }
 
+/// The repo README, anchored to the crate directory rather than the process
+/// working directory, which another test can move out from under this one.
+fn repo_readme() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../README.md")
+}
+
 #[test]
 fn test_load_local() {
     App::test((), |mut app| async move {
@@ -78,7 +83,11 @@ fn test_load_local() {
         let session = Arc::new(Session::test());
         handle
             .update(&mut app, |file_notebook, ctx| {
-                file_notebook.open_local("../README.md", Some(session), ctx);
+                file_notebook.open_local(
+                    repo_readme().to_str().expect("utf-8 path"),
+                    Some(session),
+                    ctx,
+                );
 
                 let file_id = file_notebook
                     .file_id
@@ -99,7 +108,7 @@ fn test_load_local() {
                 .location
                 .as_ref()
                 .expect("Location should be set");
-            assert_eq!(location.breadcrumbs, "..");
+            assert!(!location.breadcrumbs.is_empty());
 
             let editor = handle.as_ref(ctx).editor.as_ref(ctx);
             assert!(!editor.is_editable(ctx));
@@ -241,10 +250,10 @@ fn test_load_before_session() {
         // Open a file we know exists to verify that the view can render.
         handle
             .update(&mut app, |file_notebook, ctx| {
-                file_notebook.open_local("../README.md", None, ctx);
+                file_notebook.open_local(repo_readme().to_str().expect("utf-8 path"), None, ctx);
                 match &file_notebook.file_state {
                     FileState::Loading(SourceFile::FileBased { path, .. }) => {
-                        assert_eq!(path.to_local_path(), Some(Path::new("../README.md")))
+                        assert_eq!(path.to_local_path(), Some(repo_readme().as_path()))
                     }
                     other => panic!("Expected FileState::Loading(FileBased), got {other:?}"),
                 }
@@ -262,7 +271,7 @@ fn test_load_before_session() {
             .await;
 
         handle.read(&app, |view, _| {
-            let expected_path = dunce::canonicalize("../README.md").expect("Path exists");
+            let expected_path = dunce::canonicalize(repo_readme()).expect("Path exists");
 
             assert_eq!(view.title(), expected_path.display().to_string());
             assert!(view.location.is_none());

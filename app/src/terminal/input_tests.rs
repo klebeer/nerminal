@@ -205,6 +205,16 @@ fn renders_fixed_prompt_chip_command_without_interpolation() {
 pub fn initialize_app(app: &mut App) {
     initialize_settings_for_tests(app);
 
+    // This build ships with Vim keys on and the shell's own PS1 honoured. These
+    // tests are written against the other side of both: plain key handling, and
+    // the app's own prompt. The ones that want Vim opt in with `enable_vim_mode`.
+    AppEditorSettings::handle(app).update(app, |editor_settings, ctx| {
+        let _ = editor_settings.vim_mode.set_value(false, ctx);
+    });
+    SessionSettings::handle(app).update(app, |session_settings, ctx| {
+        let _ = session_settings.honor_ps1.set_value(false, ctx);
+    });
+
     // NLD is now opt-in by default (`ai_autodetection_enabled_internal` defaults to false).
     // These tests exercise the natural-language-detection-on code paths (buffer-driven slash
     // command detection, auto-detection input mode), so explicitly re-enable it here to preserve

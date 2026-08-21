@@ -119,6 +119,15 @@ pub fn should_use_rc_file_bootstrap_method(
 /// and is not performed recursively, but it would be useful to add such support
 /// in the future.
 pub fn script_for_shell(shell_type: ShellType, assets: &dyn AssetProvider) -> Cow<'static, [u8]> {
+    Cow::Borrowed(
+        BOOTSTRAP_CACHE.get_or_insert(&shell_type, || build_script_for_shell(shell_type, assets)),
+    )
+}
+
+/// Builds the script without consulting [`BOOTSTRAP_CACHE`]. The cache is keyed
+/// only by shell, so a caller that supplies its own assets would otherwise get
+/// whatever the first caller happened to cache.
+fn build_script_for_shell(shell_type: ShellType, assets: &dyn AssetProvider) -> Vec<u8> {
     let file = match shell_type {
         ShellType::Bash => "bash.sh",
         ShellType::Zsh => "zsh.sh",
@@ -126,8 +135,8 @@ pub fn script_for_shell(shell_type: ShellType, assets: &dyn AssetProvider) -> Co
         ShellType::PowerShell => "pwsh.ps1",
     };
 
-    BOOTSTRAP_CACHE
-        .get_or_insert(&shell_type, || {
+    {
+        {
             let file_path = format!("bundled/bootstrap/{file}");
             let bootstrap = assets
                 .get(&file_path)
@@ -201,8 +210,8 @@ pub fn script_for_shell(shell_type: ShellType, assets: &dyn AssetProvider) -> Co
             // otherwise we'll never submit the final line to the shell.
             script.push('\n');
             script.into_bytes()
-        })
-        .into()
+        }
+    }
 }
 
 /// Generates a cryptographically random session ID for use as both a session

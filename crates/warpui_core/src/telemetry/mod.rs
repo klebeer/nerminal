@@ -1,18 +1,11 @@
-mod event_store;
-
 use std::borrow::Cow;
 
 use chrono::{DateTime, Utc};
-use event_store::*;
-pub use event_store::{Event, EventPayload};
-use lazy_static::lazy_static;
-use parking_lot::Mutex;
 use serde_json::Value;
 
-lazy_static! {
-    static ref TELEMETRY: Mutex<EventStore> = Mutex::new(EventStore::new());
-}
-
+// Telemetry is not collected in this build. The recording entry points are kept
+// so the several hundred call sites across the tree still compile, but there is
+// no store behind them and no code left that could write or send an event.
 #[macro_export]
 macro_rules! record_telemetry_from_ctx {
     ($user_id: expr, $anonymous_id: expr, $name:expr, $payload: expr, $contains_ugc: expr, $ctx: expr) => {{
@@ -51,32 +44,6 @@ macro_rules! record_telemetry_on_executor {
     }};
 }
 
-/// Creates a new `Event`, but does not record it. It is up to the caller to determine when, and
-/// how, the event should be recorded.
-pub fn create_event(
-    user_id: Option<String>,
-    anonymous_id: String,
-    name: Cow<'static, str>,
-    payload: Option<Value>,
-    contains_ugc: bool,
-    timestamp: DateTime<Utc>,
-) -> Event {
-    let mut telemetry = TELEMETRY.lock();
-    telemetry.create_event(
-        user_id,
-        anonymous_id,
-        name,
-        payload,
-        contains_ugc,
-        timestamp,
-    )
-}
-
-// The three recording entry points are deliberately empty. Several hundred call
-// sites across the tree emit events, and the signatures are kept so they keep
-// compiling, but nothing is ever stored: the queue stays empty, so there is
-// nothing to flush to a file or a server no matter what the rest of the
-// pipeline decides to do.
 pub fn record_event(
     _user_id: Option<String>,
     _anonymous_id: String,
@@ -99,8 +66,4 @@ pub fn record_app_active_event(
     _anonymous_id: String,
     _timestamp: DateTime<Utc>,
 ) {
-}
-
-pub fn flush_events() -> Vec<Event> {
-    TELEMETRY.lock().events.drain(..).collect()
 }

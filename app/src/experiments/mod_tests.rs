@@ -146,6 +146,10 @@ fn test_from_group_id_errors_if_incorrect_experiment() {
 
 #[test]
 fn test_create_experiment_layer_mappings() {
+    // The mapping table is a process-wide `DashMap` that other tests populate,
+    // so this one counts only what it inserts itself.
+    EXPERIMENT_LAYER_MAPPINGS.clear();
+
     let layers = vec![&*TEST_LAYER];
     create_experiment_layer_mappings(&layers);
 
