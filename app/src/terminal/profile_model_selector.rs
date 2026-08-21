@@ -532,7 +532,7 @@ impl ProfileModelSelector {
                 .on_click(|ctx| {
                     ctx.dispatch_typed_action(WorkspaceAction::ShowSettingsPageWithSearch {
                         search_query: "api".to_string(),
-                        section: Some(SettingsSection::WarpAgent),
+                        section: None,
                     });
                 })
         });

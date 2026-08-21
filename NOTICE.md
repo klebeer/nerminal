@@ -13,10 +13,11 @@ Technologies, Inc.
 
 ## What was changed
 
-Nerminal ships the terminal and nothing that depends on a Warp account.
+Nerminal ships the terminal and nothing that depends on a Warp account or a
+Warp server.
 
-- The agent, MCP, Warp Drive, cloud agents, code review, codebase indexing and
-  the onboarding wizard are disabled for this build. See
+- Every feature that depends on a Warp account or a Warp server is disabled
+  for this build, along with the onboarding wizard that fronted them. See
   `OSS_DISABLED_FLAGS` in `app/src/features.rs`.
 - The Warp server, Oz and RTC URLs point at the loopback discard port, so no
   request can leave the machine even if a code path is missed. See

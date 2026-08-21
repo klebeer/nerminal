@@ -1230,7 +1230,7 @@ fn run_internal(mut launch_mode: LaunchMode) -> Result<()> {
             || std::env::var("WARPUI_USE_REAL_DISPLAY_IN_INTEGRATION_TESTS").is_ok();
         app_builder.set_activate_on_launch(activate_on_launch);
 
-        let dev_icon = ASSETS.get("bundled/png/local.png")?;
+        let dev_icon = ASSETS.get("bundled/png/nerminal-icon.png")?;
         app_builder.set_dev_icon(dev_icon);
 
         let show_dock_icon = crate::settings::app_icon::ShowDockIconState::read_from_preferences(
@@ -1850,7 +1850,7 @@ pub(crate) fn initialize_app(
     });
 
     #[cfg(target_os = "macos")]
-    if !launch_mode.is_headless() {}
+    AppearanceManager::as_ref(ctx).set_app_icon(ctx);
 
     #[cfg(feature = "local_tty")]
     terminal::available_shells::register(ctx);

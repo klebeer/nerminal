@@ -132,7 +132,8 @@ impl AltScreenPaddingMode {
 define_settings_group!(TerminalSettings, settings: [
     use_audible_bell: UseAudibleBell {
         type: bool,
-        default: false,
+        // Default matches the shipped configuration; override in settings.toml.
+        default: true,
         supported_platforms: SupportedPlatforms::DESKTOP, /* Audible bell is not supported on web */
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
         surface: settings::SettingSurfaces::GUI,

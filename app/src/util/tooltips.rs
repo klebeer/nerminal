@@ -242,7 +242,7 @@ where
 /// - Whether the file renders in Warp's notebook viewer, which is reached via a
 ///   different affordance (skips Markdown and, when enabled, Jupyter notebooks)
 #[cfg(feature = "local_fs")]
-pub fn should_show_open_in_warp_link(path: &Path, app: &AppContext) -> bool {
+pub fn should_show_open_in_nerminal_link(path: &Path, app: &AppContext) -> bool {
     use warpui::SingletonEntity;
 
     use crate::code::view::is_binary_file;
@@ -260,6 +260,6 @@ pub fn should_show_open_in_warp_link(path: &Path, app: &AppContext) -> bool {
 }
 
 #[cfg(not(feature = "local_fs"))]
-pub fn should_show_open_in_warp_link(_path: &std::path::Path, _app: &AppContext) -> bool {
+pub fn should_show_open_in_nerminal_link(_path: &std::path::Path, _app: &AppContext) -> bool {
     false
 }

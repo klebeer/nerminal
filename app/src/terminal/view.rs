@@ -32,7 +32,7 @@ use crate::ai::block_context::BlockContext;
 use crate::global_resource_handles::GlobalResourceHandlesProvider;
 pub(crate) mod docker_sandbox;
 mod link_detection;
-mod open_in_warp;
+mod open_in_nerminal;
 mod pane_impl;
 mod passive_suggestions;
 mod pending_user_query;
@@ -91,11 +91,11 @@ use inline_banner::{
     AliasExpansionBanner, AliasExpansionBannerAction, AnonymousUserAISignUpBannerState,
     AnonymousUserLoginBannerAction, AwsBedrockLoginBannerAction, AwsBedrockLoginBannerState,
     AwsCliNotInstalledBannerAction, AwsCliNotInstalledBannerState, ByoLlmAuthBannerSessionState,
-    OpenInWarpBannerState, VimModeBannerAction, render_alias_expansion_banner,
+    OpenInNerminalBannerState, VimModeBannerAction, render_alias_expansion_banner,
     render_aws_bedrock_login_banner, render_aws_cli_not_installed_banner,
     render_inline_notifications_discovery_banner, render_inline_notifications_error_banner,
     render_inline_shared_session_ended_banner, render_inline_shared_session_started_banner,
-    render_open_in_warp_banner, render_shell_process_terminated_banner, render_vim_mode_banner,
+    render_open_in_nerminal_banner, render_shell_process_terminated_banner, render_vim_mode_banner,
 };
 pub use inline_banner::{NotificationsDiscoveryBannerAction, NotificationsErrorBannerAction};
 use instant::Instant;
@@ -800,16 +800,16 @@ impl NotificationsTrigger {
     pub fn discovery_banner_copy(&self) -> &'static str {
         match self {
             NotificationsTrigger::LongRunningCommand(..) => {
-                "Warp can notify you when long-running commands finish."
+                "Nerminal can notify you when long-running commands finish."
             }
             NotificationsTrigger::AgentTaskCompleted(..) => {
-                "Warp can notify you when an agent finishes responding."
+                "Nerminal can notify you when an agent finishes responding."
             }
             NotificationsTrigger::NeedsAttention => {
-                "Warp can notify you when a command or agent needs your attention."
+                "Nerminal can notify you when a command or agent needs your attention."
             }
             NotificationsTrigger::PasswordPrompt => {
-                "Warp can notify you when you're prompted to enter a password."
+                "Nerminal can notify you when you're prompted to enter a password."
             }
         }
     }
@@ -1013,7 +1013,7 @@ pub enum InlineBannerType {
     SharedSessionStart,
     SharedSessionEnd,
     ShellProcessTerminated,
-    OpenInWarp,
+    OpenInNerminal,
     VimMode,
     CodebaseIndexSpeedbump,
     AgentModeSetup,
@@ -1041,7 +1041,7 @@ impl InlineBannerType {
             | Self::SharedSessionStart
             | Self::SharedSessionEnd
             | Self::ShellProcessTerminated
-            | Self::OpenInWarp
+            | Self::OpenInNerminal
             | Self::VimMode => false,
         }
     }
@@ -1083,7 +1083,7 @@ struct InlineBannersState {
     /// banner to display.
     shell_process_terminated_banner: Option<ShellProcessTerminatedBanner>,
 
-    open_in_warp_banner: Option<OpenInWarpBannerState>,
+    open_in_nerminal_banner: Option<OpenInNerminalBannerState>,
 
     vim_banner_state: Option<VimModeBannerState>,
 
@@ -2348,7 +2348,7 @@ struct TerminalViewMouseStates {
     copy_secrets_tooltip: MouseStateHandle,
 
     #[cfg_attr(not(feature = "local_fs"), allow(dead_code))]
-    open_in_warp_tooltip: MouseStateHandle,
+    open_in_nerminal_tooltip: MouseStateHandle,
     #[cfg_attr(not(feature = "local_fs"), allow(dead_code))]
     show_in_file_explorer_tooltip: MouseStateHandle,
     jump_to_bottom_of_block_button: MouseStateHandle,
@@ -3959,7 +3959,7 @@ impl TerminalView {
         let incompatible_configuration_banner = ctx.add_typed_action_view(|_| {
             Banner::new(BannerTextContent::formatted_text(vec![
                 FormattedTextFragment::plain_text(
-                    "Your shell configuration is incompatible with Warp...  ",
+                    "Your shell configuration is incompatible with Nerminal...  ",
                 ),
                 FormattedTextFragment::hyperlink("More info", KNOWN_ISSUES_URL),
             ]))
@@ -7697,24 +7697,24 @@ impl TerminalView {
                 .get_pending_action(app)
                 .map(|action| match &action.action {
                     AIAgentActionType::RequestCommandOutput { command, .. } => {
-                        format!("Warp Agent needs your permission to run `{command}`")
+                        format!("The agent needs your permission to run `{command}`")
                     }
                     AIAgentActionType::ReadFiles(..) => {
-                        "Warp Agent needs your permission to read files".to_string()
+                        "The agent needs your permission to read files".to_string()
                     }
                     AIAgentActionType::SearchCodebase(..) => {
-                        "Warp Agent needs your permission to search your codebase".to_string()
+                        "The agent needs your permission to search your codebase".to_string()
                     }
                     AIAgentActionType::RequestFileEdits { .. } => {
-                        "Warp Agent needs your permission to edit a file".to_string()
+                        "The agent needs your permission to edit a file".to_string()
                     }
                     AIAgentActionType::WriteToLongRunningShellCommand { .. } => {
-                        "Warp Agent needs your permission to interact with a running shell command"
+                        "The agent needs your permission to interact with a running shell command"
                             .to_string()
                     }
-                    _ => "Warp Agent needs your confirmation to continue".to_string(),
+                    _ => "The agent needs your confirmation to continue".to_string(),
                 })
-                .unwrap_or("Warp Agent needs your confirmation to continue".to_string());
+                .unwrap_or("The agent needs your confirmation to continue".to_string());
             return Some(AIBlockNotificationSummary {
                 success: false,
                 title,
@@ -9944,7 +9944,7 @@ impl TerminalView {
     ) {
         match event {
             WarpifySuccessBlockEvent::OpenWarpifySettings => {
-                ctx.emit(Event::OpenSettings(SettingsSection::Warpify));
+                ctx.emit(Event::OpenSettings(SettingsSection::ShellIntegration));
             }
         }
     }
@@ -10008,11 +10008,11 @@ impl TerminalView {
 
         let a11y_message = match &warpify_keybinding {
             Some(keystroke) => format!(
-                "You can press {} to Warpify this {} for more Warp features.",
+                "You can press {} to enable shell integration for this {}.",
                 keystroke.displayed(),
                 lowercase_title
             ),
-            None => format!("You can Warpify this {lowercase_title} for more Warp features."),
+            None => format!("You can enable shell integration for this {lowercase_title}."),
         };
 
         model
@@ -10165,7 +10165,7 @@ impl TerminalView {
 
         let a11y_content = AccessibilityContent::new(
             banner_title,
-            "Make sure you have enabled access for Warp notifications in System Preferences.",
+            "Make sure you have enabled access for Nerminal notifications in System Preferences.",
             WarpA11yRole::TextRole,
         );
         ctx.emit_a11y_content(a11y_content);
@@ -12508,7 +12508,7 @@ impl TerminalView {
                             self.maybe_suggest_alias_expansion(block_completed, ctx);
                         }
 
-                        self.maybe_suggest_open_in_warp(block_completed, ctx);
+                        self.maybe_suggest_open_in_nerminal(block_completed, ctx);
                     }
 
                     // Check if the user tried to run an AWS login command but AWS CLI wasn't installed.
@@ -13044,7 +13044,7 @@ impl TerminalView {
                 ctx.emit(Event::RemoteServerSkipRequested { session_id });
             }
             SshRemoteServerChoiceViewEvent::OpenWarpifySettings => {
-                ctx.emit(Event::OpenSettings(SettingsSection::Warpify));
+                ctx.emit(Event::OpenSettings(SettingsSection::ShellIntegration));
             }
         });
 
@@ -13839,7 +13839,7 @@ impl TerminalView {
 
         // Now that the session is bootstrapped, update any restored AI blocks that were
         // created before bootstrapping with the shell launch data. This enables file link
-        // detection and the "Open in Warp" button on code blocks in restored conversations.
+        // detection and the "Open in Nerminal" button on code blocks in restored conversations.
         if let Some(shell_launch_data) = self.active_session.as_ref(ctx).shell_launch_data(ctx) {
             let ai_block_handles: Vec<_> = self
                 .rich_content_views
@@ -16831,7 +16831,7 @@ impl TerminalView {
 
                             if renders_in_warp_notebook_viewer(&path) {
                                 items.push(
-                                    MenuItemFields::new("Open in Warp")
+                                    MenuItemFields::new("Open in Nerminal")
                                         .with_on_select_action(TerminalAction::OpenFileInWarp(path))
                                         .into_item(),
                                 );
@@ -17072,7 +17072,7 @@ impl TerminalView {
                     } else {
                         items.extend([
                             MenuItem::Separator,
-                            MenuItemFields::new("Ask Warp AI")
+                            MenuItemFields::new("Ask the agent")
                                 .with_on_select_action(TerminalAction::ContextMenu(
                                     ContextMenuAction::AskAI(AskAISource::SelectedBlockOrText),
                                 ))
@@ -17755,7 +17755,7 @@ impl TerminalView {
 
             if !selected_input_text.is_empty() && !FeatureFlag::AgentMode.is_enabled() {
                 items.push(
-                    MenuItemFields::new("Ask Warp AI")
+                    MenuItemFields::new("Ask the agent")
                         .with_on_select_action(TerminalAction::InputContextMenuItem(
                             InputContextMenuAction::AskWarpAI,
                         ))
@@ -20835,7 +20835,7 @@ impl TerminalView {
                 self.handle_usage_footer_toggled(block.id(), *conversation_id, *is_expanded, ctx);
             }
             AIBlockEvent::OpenSettings => {
-                ctx.emit(Event::OpenSettings(SettingsSection::WarpAgent));
+                ctx.emit(Event::OpenSettings(SettingsSection::Features));
             }
             #[cfg(feature = "local_fs")]
             AIBlockEvent::OpenCodeInWarp { source, layout } => {
@@ -22691,7 +22691,7 @@ impl TerminalView {
         let show_banner = if honor_ps1 {
             let banner_content = if shell_plugins.contains("p10k_unsupported") {
                 Some(BannerTextContent::formatted_text(vec![
-                    FormattedTextFragment::bold("Powerlevel10k now supports Warp!  "),
+                    FormattedTextFragment::bold("Powerlevel10k now supports Nerminal!  "),
                     FormattedTextFragment::plain_text(
                         "You seem to be running an older (unsupported) version, please follow ",
                     ),
@@ -24320,10 +24320,10 @@ impl TerminalView {
             }
         }
 
-        if let Some(open_in_warp_banner) = &self.inline_banners_state.open_in_warp_banner {
+        if let Some(open_in_nerminal_banner) = &self.inline_banners_state.open_in_nerminal_banner {
             inline_banners.insert(
-                open_in_warp_banner.id,
-                render_open_in_warp_banner(open_in_warp_banner, self.view_id, appearance),
+                open_in_nerminal_banner.id,
+                render_open_in_nerminal_banner(open_in_nerminal_banner, self.view_id, appearance),
             );
         }
 
@@ -26732,7 +26732,7 @@ impl TypedActionView for TerminalView {
                 WarpA11yRole::TextareaRole,
             )),
             ShowWarpifySettings => Custom(AccessibilityContent::new_without_help(
-                "Opened Warpify Settings",
+                "Opened shell integration settings",
                 WarpA11yRole::ButtonRole,
             )),
             OpenFilesPalette { .. } => Custom(AccessibilityContent::new_without_help(
@@ -26800,7 +26800,9 @@ impl TypedActionView for TerminalView {
             | StartLspServer => ActionAccessibilityContent::from_debug(),
             #[cfg(feature = "local_fs")]
             OpenCodeInWarp { .. } => ActionAccessibilityContent::from_debug(),
-            OpenInWarpBanner(action) => self.open_in_warp_banner_accessibility_content(*action),
+            OpenInNerminalBanner(action) => {
+                self.open_in_nerminal_banner_accessibility_content(*action)
+            }
             OpenAIBlockAttachedBlocksMenu { .. } => Custom(AccessibilityContent::new_without_help(
                 "Open list of blocks attached as context to this AI query.".to_owned(),
                 WarpA11yRole::PopoverRole,
@@ -27295,7 +27297,9 @@ impl TypedActionView for TerminalView {
             }
             InsertMostRecentCommandCorrection => self.insert_most_recent_command_correction(ctx),
             AliasExpansionBanner(action) => self.alias_expansion_banner_action(*action, ctx),
-            OpenInWarpBanner(action) => self.handle_open_in_warp_banner_action(*action, ctx),
+            OpenInNerminalBanner(action) => {
+                self.handle_open_in_nerminal_banner_action(*action, ctx)
+            }
             OpenBlockFilterEditor(block_index) => {
                 self.open_block_filter_editor(*block_index, OpenedFromClick::Yes, ctx)
             }
@@ -27520,7 +27524,7 @@ impl TypedActionView for TerminalView {
             LoadAgentModeConversation => {
                 self.load_agent_mode_conversation(ctx);
             }
-            ShowWarpifySettings => ctx.emit(Event::OpenSettings(SettingsSection::Warpify)),
+            ShowWarpifySettings => ctx.emit(Event::OpenSettings(SettingsSection::ShellIntegration)),
             DeleteAttachment { index } => {
                 self.ai_context_model.update(ctx, |context_model, ctx| {
                     context_model.remove_pending_attachment(*index, ctx);

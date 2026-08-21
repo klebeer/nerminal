@@ -108,28 +108,28 @@ $BUNDLE_ID = "dev.warp.$app_name"
 # APP_NAME here must match the value used in Rust as the
 # application name; see app/src/channel.rs.
 #
-# WARP_BIN is the name of the binary produced by cargo;
+# NERMINAL_BIN is the name of the binary produced by cargo;
 # BINARY_NAME is the desired name of the binary in the final package.
 if ("$CHANNEL" -eq 'local') {
-    $WARP_BIN = 'warp'
+    $NERMINAL_BIN = 'warp'
     $BINARY_NAME = 'warp.exe'
     $APP_NAME = 'WarpLocal'
 } elseif ("$CHANNEL" -eq 'dev') {
-    $WARP_BIN = 'dev'
+    $NERMINAL_BIN = 'dev'
     $BINARY_NAME = 'dev.exe'
     $APP_NAME = 'WarpDev'
     $FEATURES = "$FEATURES,agent_mode_debug"
 } elseif ("$CHANNEL" -eq 'preview') {
-    $WARP_BIN = 'preview'
+    $NERMINAL_BIN = 'preview'
     $BINARY_NAME = 'preview.exe'
     $APP_NAME = 'WarpPreview'
     $FEATURES = "$FEATURES,preview_channel"
 } elseif ("$CHANNEL" -eq 'stable') {
-    $WARP_BIN = 'stable'
+    $NERMINAL_BIN = 'stable'
     $BINARY_NAME = 'warp.exe'
     $APP_NAME = 'Warp'
 } elseif ("$CHANNEL" -eq 'oss') {
-    $WARP_BIN = 'nerminal'
+    $NERMINAL_BIN = 'nerminal'
     $BINARY_NAME = 'nerminal.exe'
     $APP_NAME = 'Nerminal'
     # The OSS channel does not ship Sentry, so drop the crash_reporting feature
@@ -138,12 +138,12 @@ if ("$CHANNEL" -eq 'local') {
 }
 
 if ($IS_TUI) {
-    $WARP_BIN = switch ($CHANNEL) {
+    $NERMINAL_BIN = switch ($CHANNEL) {
         'local' { 'warp-tui' }
         'oss' { 'warp-tui-oss' }
         Default { "warp-tui-$CHANNEL" }
     }
-    $BINARY_NAME = "$WARP_BIN.exe"
+    $BINARY_NAME = "$NERMINAL_BIN.exe"
     $APP_NAME = switch ($CHANNEL) {
         'local' { 'WarpAgentCLI' }
         'dev' { 'WarpAgentCLIDev' }
@@ -183,9 +183,9 @@ $PDB_BASENAME = if ($IS_TUI) {
     # rustc normalizes hyphens to underscores in crate names, and MSVC uses
     # that normalized crate name for the PDB even though Cargo exposes the
     # executable under its original hyphenated target name.
-    $WARP_BIN.Replace('-', '_')
+    $NERMINAL_BIN.Replace('-', '_')
 } else {
-    $WARP_BIN
+    $NERMINAL_BIN
 }
 $PDB_PATH = "$CARGO_TARGET_OUTPUT_DIR\$PDB_BASENAME.pdb"
 $CARGO_PACKAGE = if ($IS_TUI) { 'warp_tui' } else { 'warp' }
@@ -207,9 +207,9 @@ if ($DEBUG_BUILD) {
 # then exit.  We use this script to invoke `cargo check` to ensure that we are
 # using the same feature flags and profile that we would be using in production.
 if ($CHECK_ONLY) {
-    cargo check -p $CARGO_PACKAGE --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --features "$FEATURES" --target $PLATFORM_TARGET
+    cargo check -p $CARGO_PACKAGE --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --features "$FEATURES" --target $PLATFORM_TARGET
     if (-Not $?) {
-        Write-Error "Failed to verify Warp $WARP_BIN compilation with profile $CARGO_PROFILE"
+        Write-Error "Failed to verify Warp $NERMINAL_BIN compilation with profile $CARGO_PROFILE"
         exit 1
     }
     exit 0
@@ -219,16 +219,16 @@ if (-Not $SKIP_BUILD_BINARY) {
     Write-Output "Building Warp for channel $CHANNEL and bundle id $BUNDLE_ID"
     $env:CARGO_BIN_NAME = $CHANNEL
     $env:WARP_APP_NAME = $APP_NAME
-    cargo build -p $CARGO_PACKAGE --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --features "$FEATURES" --target $PLATFORM_TARGET
+    cargo build -p $CARGO_PACKAGE --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --features "$FEATURES" --target $PLATFORM_TARGET
     if (-Not $?) {
-        Write-Error "Failed to build Warp $WARP_BIN binary with profile $CARGO_PROFILE"
+        Write-Error "Failed to build Warp $NERMINAL_BIN binary with profile $CARGO_PROFILE"
         exit 1
     }
 
     # If we desire an executable name different from the cargo bin, rename it.
-    if ("$WARP_BIN.exe" -ne $BINARY_NAME) {
-        $binarySource = "$CARGO_TARGET_OUTPUT_DIR\$WARP_BIN.exe"
-        Write-Output "Renaming executable $WARP_BIN.exe to $BINARY_NAME"
+    if ("$NERMINAL_BIN.exe" -ne $BINARY_NAME) {
+        $binarySource = "$CARGO_TARGET_OUTPUT_DIR\$NERMINAL_BIN.exe"
+        Write-Output "Renaming executable $NERMINAL_BIN.exe to $BINARY_NAME"
         Move-Item -Path "$binarySource" -Destination "$BINARY_PATH" -Force
     }
 }

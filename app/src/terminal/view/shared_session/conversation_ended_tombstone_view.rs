@@ -162,7 +162,7 @@ pub struct ConversationEndedTombstoneView {
     #[cfg(not(target_family = "wasm"))]
     continue_locally_button: Option<ViewHandle<ActionButton>>,
     #[cfg(target_family = "wasm")]
-    open_in_warp_button: Option<ViewHandle<ActionButton>>,
+    open_in_nerminal_button: Option<ViewHandle<ActionButton>>,
 }
 
 impl ConversationEndedTombstoneView {
@@ -230,7 +230,7 @@ impl ConversationEndedTombstoneView {
         // In wasm, continuing locally is impossible so we instead
         // offer to open the conversation in warp (where you can continue locally).
         #[cfg(target_family = "wasm")]
-        let open_in_warp_button =
+        let open_in_nerminal_button =
             if matches!(tombstone_cta, Some(TombstoneCta::ContinueInCloud { .. })) {
                 None
             } else {
@@ -240,7 +240,7 @@ impl ConversationEndedTombstoneView {
                             .with_tooltip("Open this conversation in the Warp desktop app")
                             .on_click(move |ctx| {
                                 ctx.dispatch_typed_action(
-                                    ConversationEndedTombstoneAction::OpenInWarp(conv_id),
+                                    ConversationEndedTombstoneAction::OpenInNerminal(conv_id),
                                 );
                             })
                     })
@@ -254,7 +254,7 @@ impl ConversationEndedTombstoneView {
             #[cfg(not(target_family = "wasm"))]
             continue_locally_button,
             #[cfg(target_family = "wasm")]
-            open_in_warp_button,
+            open_in_nerminal_button,
         };
 
         ctx.subscribe_to_view(
@@ -507,9 +507,9 @@ impl ConversationEndedTombstoneView {
         {
             // Don't show on mobile devices - they can't use the desktop app
             if !warpui::platform::wasm::is_mobile_device()
-                && let Some(ref open_in_warp_button) = self.open_in_warp_button
+                && let Some(ref open_in_nerminal_button) = self.open_in_nerminal_button
             {
-                row.add_child(ChildView::new(open_in_warp_button).finish());
+                row.add_child(ChildView::new(open_in_nerminal_button).finish());
                 has_button = true;
             }
         }
@@ -552,7 +552,7 @@ pub enum ConversationEndedTombstoneAction {
     #[cfg(not(target_family = "wasm"))]
     ContinueLocally(AIConversationId),
     #[cfg(target_family = "wasm")]
-    OpenInWarp(AIConversationId),
+    OpenInNerminal(AIConversationId),
 }
 
 impl View for ConversationEndedTombstoneView {
@@ -652,8 +652,11 @@ impl TypedActionView for ConversationEndedTombstoneView {
                 });
             }
             #[cfg(target_family = "wasm")]
-            ConversationEndedTombstoneAction::OpenInWarp(conversation_id) => {
-                send_telemetry_from_ctx!(AgentManagementTelemetryEvent::TombstoneOpenInWarp, ctx);
+            ConversationEndedTombstoneAction::OpenInNerminal(conversation_id) => {
+                send_telemetry_from_ctx!(
+                    AgentManagementTelemetryEvent::TombstoneOpenInNerminal,
+                    ctx
+                );
                 let conversation = BlocklistAIHistoryModel::handle(ctx)
                     .as_ref(ctx)
                     .conversation(conversation_id);

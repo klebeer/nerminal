@@ -954,14 +954,14 @@ impl AIDocumentView {
             EditorViewEvent::OpenFile {
                 path,
                 line_and_column_num,
-                force_open_in_warp,
+                force_open_in_nerminal,
             } => {
                 use crate::util::file::external_editor::EditorSettings;
                 use crate::util::openable_file_type::{
                     is_supported_image_file, resolve_file_target,
                 };
 
-                if *force_open_in_warp {
+                if *force_open_in_nerminal {
                     let layout = *EditorSettings::as_ref(ctx).open_file_layout;
                     let source = CodeSource::Link {
                         path: path.clone(),

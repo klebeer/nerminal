@@ -25,11 +25,11 @@
 # Once the stapling is done, the app can be shared.
 #
 # Three passwords are read from GCP Secret Manager (or from env if --read-passwords-from-env is set) if you are codesigning.
-# 1) WARP_NOTARIZATION_PASSWORD:  This is an "app-specific password" that
+# 1) NERMINAL_NOTARIZATION_PASSWORD:  This is an "app-specific password" that
 #    is tied to the zach@warp.dev account.  See https://support.apple.com/en-us/HT204397
-# 2) WARP_DEVELOPER_ID_CERT_PASSWORD: This is a password tied to the private key
+# 2) NERMINAL_DEVELOPER_ID_CERT_PASSWORD: This is a password tied to the private key
 #    of our cert - it is needed to use the cert to sign our binary.
-# 3) WARP_CODESIGN_KEYCHAIN_PASSWORD: This is an arbitrary password only used
+# 3) NERMINAL_CODESIGN_KEYCHAIN_PASSWORD: This is an arbitrary password only used
 #    in the lifetime of this app for creating the keychain used to sign.  Can
 #    be anything.
 #
@@ -124,8 +124,8 @@ function codesign_with_retry() {
 function notarize_artifact() {
   local artifact="$1"
   local auth_args=(
-    --apple-id "$WARP_NOTARIZATION_APPLE_ID"
-    --password "$WARP_NOTARIZATION_PASSWORD"
+    --apple-id "$NERMINAL_NOTARIZATION_APPLE_ID"
+    --password "$NERMINAL_NOTARIZATION_PASSWORD"
     --team-id "$APPLE_TEAM_ID"
   )
 
@@ -388,20 +388,20 @@ if [[ "$CARGO_PROFILE" == "dev" ]]; then
 fi
 
 if [[ $RELEASE_CHANNEL = "local" ]]; then
-    WARP_BIN="warp"
+    NERMINAL_BIN="warp"
     BUNDLE_ID="dev.warp.Warp-Local"
     WARP_APP_NAME="WarpLocal"
-    WARP_SCHEME_NAME="warplocal"
+    NERMINAL_SCHEME_NAME="warplocal"
     FEATURES="$FEATURES,agent_mode_debug"
     # For local builds, use different versions of our bundled frameworks (e.g.:
     # Sentry).  This needs to be exported so it can be referenced by
     # app/build.rs later, while running `cargo bundle`.
     export FRAMEWORK_OVERRIDE="dev"
 elif [[ $RELEASE_CHANNEL = "dev" ]]; then
-    WARP_BIN="dev"
+    NERMINAL_BIN="dev"
     BUNDLE_ID="dev.warp.Warp-Dev"
     WARP_APP_NAME="WarpDev"
-    WARP_SCHEME_NAME="warpdev"
+    NERMINAL_SCHEME_NAME="warpdev"
     FEATURES="$FEATURES,agent_mode_debug"
     # Enable heap usage tracking & profiling using jemalloc through pprof.
     FEATURES="$FEATURES,jemalloc_pprof,heap_usage_tracking"
@@ -413,25 +413,25 @@ elif [[ $RELEASE_CHANNEL = "dev" ]]; then
     export FRAMEWORK_OVERRIDE="dev"
     export HANDLE_MARKDOWN=1
 elif [[ $RELEASE_CHANNEL = "preview" ]]; then
-    WARP_BIN="preview"
+    NERMINAL_BIN="preview"
     BUNDLE_ID="dev.warp.Warp-Preview"
     WARP_APP_NAME="WarpPreview"
-    WARP_SCHEME_NAME="warppreview"
+    NERMINAL_SCHEME_NAME="warppreview"
     FEATURES="$FEATURES,preview_channel"
     # Enable heap usage tracking & profiling using jemalloc through pprof.
     FEATURES="$FEATURES,jemalloc_pprof,heap_usage_tracking"
 elif [[ $RELEASE_CHANNEL = "stable" ]]; then
-    WARP_BIN="stable"
+    NERMINAL_BIN="stable"
     BUNDLE_ID="dev.warp.Warp-Stable"
     WARP_APP_NAME="Warp"
-    WARP_SCHEME_NAME="warp"
+    NERMINAL_SCHEME_NAME="warp"
     # Enable heap usage tracking & profiling using jemalloc through pprof.
     FEATURES="$FEATURES,jemalloc_pprof,heap_usage_tracking"
 elif [[ $RELEASE_CHANNEL = "oss" ]]; then
-    WARP_BIN="nerminal"
+    NERMINAL_BIN="nerminal"
     BUNDLE_ID="com.klebeer.Nerminal"
     WARP_APP_NAME="Nerminal"
-    WARP_SCHEME_NAME="nerminal"
+    NERMINAL_SCHEME_NAME="nerminal"
     # The OSS channel does not ship Sentry, so drop the cocoa_sentry feature
     # (which would otherwise pull in the Sentry framework dependency).
     FEATURES="release_bundle,extern_plist"
@@ -481,13 +481,13 @@ elif [[ "$ARTIFACT" == tui ]]; then
   UNIVERSAL_BINARY=false
   OPEN_AFTER_BUNDLE=false
   case "$RELEASE_CHANNEL" in
-    local) WARP_BIN="warp-tui" ;;
-    oss) WARP_BIN="warp-tui-oss" ;;
-    *) WARP_BIN="warp-tui-$RELEASE_CHANNEL" ;;
+    local) NERMINAL_BIN="warp-tui" ;;
+    oss) NERMINAL_BIN="warp-tui-oss" ;;
+    *) NERMINAL_BIN="warp-tui-$RELEASE_CHANNEL" ;;
   esac
-  WARP_TUI_FEATURES="release_bundle,standalone,voice_input"
+  NERMINAL_TUI_FEATURES="release_bundle,standalone,voice_input"
   if [[ "$RELEASE_CHANNEL" != "oss" ]]; then
-    WARP_TUI_FEATURES="$WARP_TUI_FEATURES,crash_reporting"
+    NERMINAL_TUI_FEATURES="$NERMINAL_TUI_FEATURES,crash_reporting"
   fi
 elif [[ "$ARTIFACT" == app ]]; then
   # All channels ship the v3 classifier and v2 heuristic.
@@ -504,17 +504,17 @@ fi
 # using the same feature flags and profile that we would be using in production.
 if [[ "$CHECK_ONLY" == "true" ]]; then
   if [[ "$ARTIFACT" == "tui" ]]; then
-    cargo check -p warp_tui --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$DEFAULT_TARGET" --features "$WARP_TUI_FEATURES"
+    cargo check -p warp_tui --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$DEFAULT_TARGET" --features "$NERMINAL_TUI_FEATURES"
   else
-    cargo check --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$DEFAULT_TARGET" --features "$FEATURES"
+    cargo check --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$DEFAULT_TARGET" --features "$FEATURES"
     if [[ $UNIVERSAL_BINARY = true && "$ARTIFACT" != "cli" && "$ARTIFACT" != "warpctrl" ]]; then
-      cargo check --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$ADDITIONAL_TARGET" --features "$FEATURES"
+      cargo check --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$ADDITIONAL_TARGET" --features "$FEATURES"
     fi
   fi
   exit 0
 fi
 
-DMG_DIR="$BUNDLE_DIR/dmg/$WARP_BIN"
+DMG_DIR="$BUNDLE_DIR/dmg/$NERMINAL_BIN"
 DMG_NAME="$WARP_APP_NAME.dmg"
 if [[ -z "$FINAL_DMG_NAME" && -n "$DMG_NAME_SUFFIX" ]]; then
   FINAL_DMG_NAME="$WARP_APP_NAME-$DMG_NAME_SUFFIX.dmg"
@@ -539,13 +539,13 @@ if [[ "$ARTIFACT" == "app" ]]; then
 
   pushd app > /dev/null
   echo "Building and bundling $DEFAULT_TARGET for channel $RELEASE_CHANNEL and bundle id $BUNDLE_ID with profile $CARGO_PROFILE"
-  cargo bundle --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$DEFAULT_TARGET" --features "$FEATURES"
+  cargo bundle --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$DEFAULT_TARGET" --features "$FEATURES"
   popd > /dev/null
 
-  "$WORKSPACE_ROOT_DIR/script/macos/add_framework_rpath" "$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/MacOS/$WARP_BIN"
+  "$WORKSPACE_ROOT_DIR/script/macos/add_framework_rpath" "$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/MacOS/$NERMINAL_BIN"
 
-  export WARP_SCHEME_NAME
-  export WARP_PLIST_PATH="$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/Info.plist"
+  export NERMINAL_SCHEME_NAME
+  export NERMINAL_PLIST_PATH="$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/Info.plist"
   ./script/update_plist
 
   if [[ $REGISTER_SERVICES = true ]]; then
@@ -607,7 +607,7 @@ if [[ "$ARTIFACT" == "app" ]]; then
           echo "Building $ADDITIONAL_TARGET to include in universal binary"
 
           pushd app > /dev/null
-          cargo build --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$ADDITIONAL_TARGET" --features "$FEATURES"
+          cargo build --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$ADDITIONAL_TARGET" --features "$FEATURES"
           popd > /dev/null
       else
           echo "Skipping build of $ADDITIONAL_TARGET due to --skip-build flag"
@@ -617,13 +617,13 @@ if [[ "$ARTIFACT" == "app" ]]; then
 
       echo "Adding rpath to both binaries for universal executable"
       "$WORKSPACE_ROOT_DIR/script/macos/add_framework_rpath" \
-        "target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN" \
-        "target/$ARM_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN"
+        "target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN" \
+        "target/$ARM_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN"
 
       echo "Building universal binary using lipo."
-      lipo -create -output "$tmp_bundle_dir/$WARP_BIN" \
-          "target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN" \
-          "target/$ARM_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN"
+      lipo -create -output "$tmp_bundle_dir/$NERMINAL_BIN" \
+          "target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN" \
+          "target/$ARM_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN"
 
       # Compute the real absolute path to the dSYM file, factoring in symlinks.
       # Starting in Rust 1.56, the generated dSYMs are symlinks to files within the target/dep directory. For example,
@@ -631,23 +631,23 @@ if [[ "$ARTIFACT" == "app" ]]; then
       # would be located at dev.dSYM/Contents/Resources/DWARF/dev-080cf7e291fb066d.dSYM where dev.dSYM is symlink to
       # deps/dev-080cf7e291fb066d.dSYM. To fix this, parse out the actual name of the directory that the dSYM is
       # symlinked to, since this is also the name of file that contains the debug symbols within the dSYM.
-      INTEL_DSYM_NAME=$(basename "$(realpath target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM)" .dSYM)
-      INTEL_DSYM_PATH="target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM/Contents/Resources/DWARF/$INTEL_DSYM_NAME"
-      ARM_DSYM_NAME=$(basename "$(realpath target/$ARM_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM)" .dSYM)
-      ARM_DSYM_PATH="target/$ARM_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM/Contents/Resources/DWARF/$ARM_DSYM_NAME"
+      INTEL_DSYM_NAME=$(basename "$(realpath target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM)" .dSYM)
+      INTEL_DSYM_PATH="target/$INTEL_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM/Contents/Resources/DWARF/$INTEL_DSYM_NAME"
+      ARM_DSYM_NAME=$(basename "$(realpath target/$ARM_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM)" .dSYM)
+      ARM_DSYM_PATH="target/$ARM_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM/Contents/Resources/DWARF/$ARM_DSYM_NAME"
       if [[ -e "$INTEL_DSYM_PATH" && -e "$ARM_DSYM_PATH" ]]; then
-        echo "Building universal binary .dSYM using lipo and storing in $OUT_DIR/$WARP_BIN.dSYM"
+        echo "Building universal binary .dSYM using lipo and storing in $OUT_DIR/$NERMINAL_BIN.dSYM"
 
         # Use lipo to merge the .dSYM files into a single universal .dSYM file.
         # It expects the base name for the file (with the .dSYM suffix removed).
-        lipo -create -output "$OUT_DIR/$WARP_BIN.dSYM" "${INTEL_DSYM_PATH}" "${ARM_DSYM_PATH}"
+        lipo -create -output "$OUT_DIR/$NERMINAL_BIN.dSYM" "${INTEL_DSYM_PATH}" "${ARM_DSYM_PATH}"
       fi
 
       echo "Storing result in $BUNDLE_DIR, replacing $DEFAULT_TARGET binary with fat binary."
-      mv "$tmp_bundle_dir/$WARP_BIN" "$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/MacOS"
-  elif [[ -n "$TARGET_ARCH" && -e "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" ]]; then
-    echo "Copying .dSYM into $OUT_DIR/$WARP_BIN.dSYM"
-    cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" "$OUT_DIR/"
+      mv "$tmp_bundle_dir/$NERMINAL_BIN" "$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/MacOS"
+  elif [[ -n "$TARGET_ARCH" && -e "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM" ]]; then
+    echo "Copying .dSYM into $OUT_DIR/$NERMINAL_BIN.dSYM"
+    cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM" "$OUT_DIR/"
   fi
 
   BUNDLED_RESOURCES_DIR="$BUNDLE_DIR/$WARP_APP_NAME.app/Contents/Resources"
@@ -678,11 +678,11 @@ if [[ "$ARTIFACT" == "app" ]]; then
   cat > "$CLI_SCRIPT_PATH" << 'EOF'
 #!/bin/bash
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec -a "$0" "$script_dir/../../MacOS/WARP_BIN_PLACEHOLDER" "$@"
+exec -a "$0" "$script_dir/../../MacOS/NERMINAL_BIN_PLACEHOLDER" "$@"
 EOF
   
   # Replace the placeholder with the actual binary name
-  sed -i '' "s/WARP_BIN_PLACEHOLDER/$WARP_BIN/" "$CLI_SCRIPT_PATH"
+  sed -i '' "s/NERMINAL_BIN_PLACEHOLDER/$NERMINAL_BIN/" "$CLI_SCRIPT_PATH"
   
   # Make the script executable
   chmod +x "$CLI_SCRIPT_PATH"
@@ -700,11 +700,11 @@ EOF
     echo "Creating warpctrl wrapper script at $WARPCTRL_SCRIPT_PATH..."
     "$WORKSPACE_ROOT_DIR/script/macos/create_warpctrl_wrapper" \
       "$WARPCTRL_SCRIPT_PATH" \
-      "../../MacOS/$WARP_BIN"
+      "../../MacOS/$NERMINAL_BIN"
   fi
 
   # Store the built artifact locations for GitHub Actions outputs.
-  BINARY_PATH="target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN"
+  BINARY_PATH="target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN"
   DMG_PATH="$OUT_DIR/$FINAL_DMG_NAME"
 elif [[ "$ARTIFACT" == "cli" || "$ARTIFACT" == "warpctrl" ]]; then
   if [[ $BUILD_BINARY == true ]]; then
@@ -712,26 +712,26 @@ elif [[ "$ARTIFACT" == "cli" || "$ARTIFACT" == "warpctrl" ]]; then
     # Apple's codesigning tools will detect Info.plist files in the same directory as an executable.
     # This breaks the code signature, so we must use a different location for the file.
     mkdir -p "$BUNDLE_DIR"
-    export WARP_PLIST_PATH="$BUNDLE_DIR/cli-info.plist"
-    cp app/assets/resources/mac/CLI-Info.plist "$WARP_PLIST_PATH"
+    export NERMINAL_PLIST_PATH="$BUNDLE_DIR/cli-info.plist"
+    cp app/assets/resources/mac/CLI-Info.plist "$NERMINAL_PLIST_PATH"
 
-    export WARP_PLIST_NO_FILE_TYPES=true
+    export NERMINAL_PLIST_NO_FILE_TYPES=true
     ./script/update_plist
-    plutil -insert CFBundleIdentifier -string "$BUNDLE_ID" "$WARP_PLIST_PATH"
-    plutil -insert CFBundleName -string "$WARP_BIN" "$WARP_PLIST_PATH"
-    plutil -insert CFBundleExecutable -string "$WARP_BIN" "$WARP_PLIST_PATH"
+    plutil -insert CFBundleIdentifier -string "$BUNDLE_ID" "$NERMINAL_PLIST_PATH"
+    plutil -insert CFBundleName -string "$NERMINAL_BIN" "$NERMINAL_PLIST_PATH"
+    plutil -insert CFBundleExecutable -string "$NERMINAL_BIN" "$NERMINAL_PLIST_PATH"
 
-    export "INFO_PLIST_PATH=$(realpath "$WARP_PLIST_PATH")"
+    export "INFO_PLIST_PATH=$(realpath "$NERMINAL_PLIST_PATH")"
     pushd app > /dev/null
     echo "Building $DEFAULT_TARGET for channel $RELEASE_CHANNEL with profile $CARGO_PROFILE"
-    cargo build --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$DEFAULT_TARGET" --features "$FEATURES"
+    cargo build --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$DEFAULT_TARGET" --features "$FEATURES"
     popd > /dev/null
   else
     echo "Skipping binary build due to --skip-build flag"
   fi
 
-  echo "Copying binary into $OUT_DIR/$WARP_BIN"
-  cp "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN" "$OUT_DIR/$WARP_BIN"
+  echo "Copying binary into $OUT_DIR/$NERMINAL_BIN"
+  cp "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN" "$OUT_DIR/$NERMINAL_BIN"
 
   if [[ "$ARTIFACT" == "warpctrl" ]]; then
     if [[ ! ",$FEATURES," =~ ",warp_control_cli," ]]; then
@@ -742,12 +742,12 @@ elif [[ "$ARTIFACT" == "cli" || "$ARTIFACT" == "warpctrl" ]]; then
     echo "Creating warpctrl wrapper script at $WARPCTRL_SCRIPT_PATH"
     "$WORKSPACE_ROOT_DIR/script/macos/create_warpctrl_wrapper" \
       "$WARPCTRL_SCRIPT_PATH" \
-      "$WARP_BIN"
+      "$NERMINAL_BIN"
   fi
 
-  if [[ -n "$TARGET_ARCH" && -e "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" ]]; then
-    echo "Copying .dSYM into $OUT_DIR/$WARP_BIN.dSYM"
-    cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" "$OUT_DIR/"
+  if [[ -n "$TARGET_ARCH" && -e "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM" ]]; then
+    echo "Copying .dSYM into $OUT_DIR/$NERMINAL_BIN.dSYM"
+    cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM" "$OUT_DIR/"
   fi
 
   echo "Preparing CLI resources directory"
@@ -759,22 +759,22 @@ elif [[ "$ARTIFACT" == "cli" || "$ARTIFACT" == "warpctrl" ]]; then
   if [[ "$ARTIFACT" == "warpctrl" ]]; then
     BINARY_PATH="$OUT_DIR/warpctrl"
   else
-    BINARY_PATH="$OUT_DIR/$WARP_BIN"
+    BINARY_PATH="$OUT_DIR/$NERMINAL_BIN"
   fi
 elif [[ "$ARTIFACT" == "tui" ]]; then
   if [[ $BUILD_BINARY == true ]]; then
-    echo "Building $WARP_BIN ($DEFAULT_TARGET) for channel $RELEASE_CHANNEL with profile $CARGO_PROFILE"
-    cargo build -p warp_tui --profile "$CARGO_PROFILE" --bin "$WARP_BIN" --target "$DEFAULT_TARGET" --features "$WARP_TUI_FEATURES"
+    echo "Building $NERMINAL_BIN ($DEFAULT_TARGET) for channel $RELEASE_CHANNEL with profile $CARGO_PROFILE"
+    cargo build -p warp_tui --profile "$CARGO_PROFILE" --bin "$NERMINAL_BIN" --target "$DEFAULT_TARGET" --features "$NERMINAL_TUI_FEATURES"
   else
     echo "Skipping binary build due to --skip-build flag"
   fi
 
-  echo "Copying binary into $OUT_DIR/$WARP_BIN"
-  cp "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN" "$OUT_DIR/$WARP_BIN"
+  echo "Copying binary into $OUT_DIR/$NERMINAL_BIN"
+  cp "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN" "$OUT_DIR/$NERMINAL_BIN"
 
-  if [[ -n "$TARGET_ARCH" && -e "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" ]]; then
-    echo "Copying .dSYM into $OUT_DIR/$WARP_BIN.dSYM"
-    cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$WARP_BIN.dSYM" "$OUT_DIR/"
+  if [[ -n "$TARGET_ARCH" && -e "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM" ]]; then
+    echo "Copying .dSYM into $OUT_DIR/$NERMINAL_BIN.dSYM"
+    cp -HR "target/$DEFAULT_TARGET/$TARGET_PROFILE_DIR/$NERMINAL_BIN.dSYM" "$OUT_DIR/"
   fi
 
   # Ship bundled skills + settings schema next to the binary. The standalone TUI
@@ -784,7 +784,7 @@ elif [[ "$ARTIFACT" == "tui" ]]; then
   BUNDLED_RESOURCES_DIR="$OUT_DIR/resources"
   "$WORKSPACE_ROOT_DIR/script/prepare_bundled_resources" "$BUNDLED_RESOURCES_DIR" "$RELEASE_CHANNEL" "$CARGO_PROFILE"
 
-  BINARY_PATH="$OUT_DIR/$WARP_BIN"
+  BINARY_PATH="$OUT_DIR/$NERMINAL_BIN"
 else
   echo "Unsupported artifact: $ARTIFACT" >&2
   exit 1
@@ -800,25 +800,25 @@ if [[ $READ_PASSWORDS_FROM_ENV != true ]]; then
 fi
 
 if [[ $CODESIGN = true ]]; then
-  # TODO - does this need to change per user?  Seems like it's tied to the WARP_NOTARIZATION_PASSWORD password.
+  # TODO - does this need to change per user?  Seems like it's tied to the NERMINAL_NOTARIZATION_PASSWORD password.
   APPLE_TEAM_ID="2BBY89MBSN"
   CODESIGN_KEYCHAIN_NAME="warp-codesign-keychain"
 
   echo "Starting codesigning..."
 
   if [[ $READ_PASSWORDS_FROM_ENV = true ]]; then
-    if [ -z "$WARP_NOTARIZATION_PASSWORD" ] ; then
-      echo "WARP_NOTARIZATION_PASSWORD must be set for code signing"
+    if [ -z "$NERMINAL_NOTARIZATION_PASSWORD" ] ; then
+      echo "NERMINAL_NOTARIZATION_PASSWORD must be set for code signing"
       exit 1
     fi
 
-    if [ -z "$WARP_DEVELOPER_ID_CERT_PASSWORD" ] ; then
-      echo "WARP_DEVELOPER_ID_CERT_PASSWORD must be set for code signing"
+    if [ -z "$NERMINAL_DEVELOPER_ID_CERT_PASSWORD" ] ; then
+      echo "NERMINAL_DEVELOPER_ID_CERT_PASSWORD must be set for code signing"
       exit 1
     fi
 
-    if [ -z "$WARP_CODESIGN_KEYCHAIN_PASSWORD" ] ; then
-      echo "WARP_CODESIGN_KEYCHAIN_PASSWORD must be set for code signing"
+    if [ -z "$NERMINAL_CODESIGN_KEYCHAIN_PASSWORD" ] ; then
+      echo "NERMINAL_CODESIGN_KEYCHAIN_PASSWORD must be set for code signing"
       exit 1
     fi
   fi
@@ -826,14 +826,14 @@ if [[ $CODESIGN = true ]]; then
   security delete-keychain $CODESIGN_KEYCHAIN_NAME || echo "No existing keychain to clean up".
 
   echo "Creating $CODESIGN_KEYCHAIN_NAME keychain."
-  security create-keychain -p "$WARP_CODESIGN_KEYCHAIN_PASSWORD" $CODESIGN_KEYCHAIN_NAME
+  security create-keychain -p "$NERMINAL_CODESIGN_KEYCHAIN_PASSWORD" $CODESIGN_KEYCHAIN_NAME
   security list-keychains -s $CODESIGN_KEYCHAIN_NAME
   security set-keychain-settings -t 3600 -u $CODESIGN_KEYCHAIN_NAME
 
   echo "Unlocking keychain and setting cert."
-  security unlock-keychain -p "$WARP_CODESIGN_KEYCHAIN_PASSWORD" $CODESIGN_KEYCHAIN_NAME
-  security import <(echo "$WARP_DEVELOPER_ID_CERT" | base64 -d) -f pkcs12 -P "$WARP_DEVELOPER_ID_CERT_PASSWORD" -k $CODESIGN_KEYCHAIN_NAME -T /usr/bin/codesign
-  security set-key-partition-list -S "apple-tool:,apple:" -s -k "$WARP_CODESIGN_KEYCHAIN_PASSWORD" $CODESIGN_KEYCHAIN_NAME
+  security unlock-keychain -p "$NERMINAL_CODESIGN_KEYCHAIN_PASSWORD" $CODESIGN_KEYCHAIN_NAME
+  security import <(echo "$NERMINAL_DEVELOPER_ID_CERT" | base64 -d) -f pkcs12 -P "$NERMINAL_DEVELOPER_ID_CERT_PASSWORD" -k $CODESIGN_KEYCHAIN_NAME -T /usr/bin/codesign
+  security set-key-partition-list -S "apple-tool:,apple:" -s -k "$NERMINAL_CODESIGN_KEYCHAIN_PASSWORD" $CODESIGN_KEYCHAIN_NAME
 fi
 
 ##############################
@@ -852,8 +852,8 @@ if [[ $SELFSIGN = true ]]; then
     echo "Self-signing $BUNDLE_DIR/$WARP_APP_NAME.app with ${SIGNING_CERT}..."
     codesign --force --deep --options runtime --sign "$SIGNING_CERT" "$BUNDLE_DIR/$WARP_APP_NAME.app" --entitlements script/Debug-Entitlements.plist
   elif [[ "$ARTIFACT" == cli || "$ARTIFACT" == warpctrl || "$ARTIFACT" == tui ]]; then
-    echo "Self-signing $OUT_DIR/$WARP_BIN with ${SIGNING_CERT}..."
-    codesign --force --options runtime --sign "$SIGNING_CERT" "$OUT_DIR/$WARP_BIN" --entitlements script/Debug-Entitlements.plist
+    echo "Self-signing $OUT_DIR/$NERMINAL_BIN with ${SIGNING_CERT}..."
+    codesign --force --options runtime --sign "$SIGNING_CERT" "$OUT_DIR/$NERMINAL_BIN" --entitlements script/Debug-Entitlements.plist
   fi
 elif [[ $CODESIGN = true ]]; then
   if [[ "$ARTIFACT" == app ]]; then
@@ -861,19 +861,19 @@ elif [[ $CODESIGN = true ]]; then
     # Use --deep so we sign bundled frameworks as well
     codesign_with_retry --deep -f -o runtime --timestamp -s "$APPLE_TEAM_ID" "$BUNDLE_DIR/$WARP_APP_NAME.app" --entitlements script/Entitlements.plist
   elif [[ "$ARTIFACT" == cli || "$ARTIFACT" == warpctrl || "$ARTIFACT" == tui ]]; then
-    echo "Codesigning $OUT_DIR/$WARP_BIN..."
-    codesign_with_retry -f -o runtime --timestamp -s "$APPLE_TEAM_ID" "$OUT_DIR/$WARP_BIN" --entitlements script/Entitlements.plist
+    echo "Codesigning $OUT_DIR/$NERMINAL_BIN..."
+    codesign_with_retry -f -o runtime --timestamp -s "$APPLE_TEAM_ID" "$OUT_DIR/$NERMINAL_BIN" --entitlements script/Entitlements.plist
 
     # Create the .zip for notarization in a separate location - otherwise, Apple's codesigning
     # tools decide that it's a sealed resource that belongs to the binary and needs to also be signed.
-    NOTARIZATION_ARTIFACT="$BUNDLE_DIR/${WARP_BIN}_notarize.zip"
+    NOTARIZATION_ARTIFACT="$BUNDLE_DIR/${NERMINAL_BIN}_notarize.zip"
     if [[ -e "$NOTARIZATION_ARTIFACT" ]]; then
       echo "Removing old notarization artifact..."
       rm "$NOTARIZATION_ARTIFACT"
     fi
 
     # Create a .zip archive to notarize.
-    ditto -c -k "$OUT_DIR/$WARP_BIN" "$NOTARIZATION_ARTIFACT"
+    ditto -c -k "$OUT_DIR/$NERMINAL_BIN" "$NOTARIZATION_ARTIFACT"
     
     # It's not possible to staple notarization tickets to standalone binaries:
     # https://developer.apple.com/documentation/security/customizing-the-notarization-workflow?language=objc#Staple-the-ticket-to-your-distribution
@@ -892,10 +892,10 @@ if [[ "$ARTIFACT" = app ]]; then
     local source_folder="$1"
 
     local args=(
-      --volname Warp
+      --volname Nerminal
       # For --no-internet-enable, see https://github.com/create-dmg/create-dmg/issues/179
       --no-internet-enable
-      --background app/assets/resources/mac/warp_install_image.png
+      --background app/assets/resources/mac/nerminal_install_image.png
       --icon-size 128
       --window-size 700 500
       --format UDZO
@@ -967,7 +967,7 @@ if [[ $CODESIGN = true ]]; then
   if [[ "$ARTIFACT" = app ]]; then
     xcrun stapler validate "$DMG_DIR/$DMG_NAME"
   elif [[ "$ARTIFACT" = cli || "$ARTIFACT" = warpctrl || "$ARTIFACT" = tui ]]; then
-    spctl -a -t open --context context:primary-signature -vv "$OUT_DIR/$WARP_BIN"
+    spctl -a -t open --context context:primary-signature -vv "$OUT_DIR/$NERMINAL_BIN"
   fi
 fi
 

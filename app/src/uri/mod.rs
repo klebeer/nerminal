@@ -1378,11 +1378,11 @@ fn open_file(window_id: Option<WindowId>, path: PathBuf, ctx: &mut AppContext) {
             use crate::code::editor_management::CodeSource;
             use crate::root_view::{NewWorkspaceSource, open_new_with_workspace_source};
             use crate::util::file::external_editor::EditorSettings;
-            use crate::util::openable_file_type::resolve_file_target_to_open_in_warp;
+            use crate::util::openable_file_type::resolve_file_target_to_open_in_nerminal;
 
             // Open text/code files in Warp's code editor, respecting the user's layout preference.
             let editor_settings = EditorSettings::as_ref(ctx);
-            let target = resolve_file_target_to_open_in_warp(&path, editor_settings, None);
+            let target = resolve_file_target_to_open_in_nerminal(&path, editor_settings, None);
 
             let window_id = if let Some((wid, _)) = primary_window_and_view {
                 wid
@@ -1465,7 +1465,7 @@ fn open_file_editor(
         use crate::code::editor_management::CodeSource;
         use crate::root_view::{NewWorkspaceSource, open_new_with_workspace_source};
         use crate::util::file::external_editor::EditorSettings;
-        use crate::util::openable_file_type::resolve_file_target_to_open_in_warp;
+        use crate::util::openable_file_type::resolve_file_target_to_open_in_nerminal;
 
         if !can_open_file_editor_path(&path) {
             log::warn!("open_file_editor action rejected non-openable path: {path:?}");
@@ -1473,7 +1473,7 @@ fn open_file_editor(
         }
 
         let editor_settings = EditorSettings::as_ref(ctx);
-        let target = resolve_file_target_to_open_in_warp(&path, editor_settings, None);
+        let target = resolve_file_target_to_open_in_nerminal(&path, editor_settings, None);
 
         let window_id = if let Some((wid, _)) = primary_window_id.and_then(|window_id| {
             ctx.root_view_id(window_id)
@@ -1679,7 +1679,6 @@ fn settings_section_for_simple_subpage(subpage: &str) -> Option<SettingsSection>
         "billing_and_usage" => Some(SettingsSection::BillingAndUsage),
         "platform" => Some(SettingsSection::OzCloudAPIKeys),
         "appearance" => Some(SettingsSection::Appearance),
-        "warp_agent" => Some(SettingsSection::WarpAgent),
         _ => None,
     }
 }

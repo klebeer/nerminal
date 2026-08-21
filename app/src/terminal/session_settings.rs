@@ -298,7 +298,8 @@ define_settings_group!(SessionSettings, settings: [
     }
     honor_ps1: HonorPS1 {
         type: bool,
-        default: false,
+        // Default matches the shipped configuration; override in settings.toml.
+        default: true,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
         surface: settings::SettingSurfaces::GUI,

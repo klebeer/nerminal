@@ -13,7 +13,6 @@ use super::settings_page::{
 };
 use crate::appearance::Appearance;
 use crate::channel::ChannelState;
-use crate::themes::theme::ColorScheme;
 use crate::workspace::WorkspaceAction;
 
 pub struct AboutPageView {
@@ -60,14 +59,7 @@ impl SettingsWidget for AboutPageWidget {
         appearance: &Appearance,
         _app: &AppContext,
     ) -> Box<dyn Element> {
-        let theme = appearance.theme();
         let ui_builder = appearance.ui_builder();
-
-        let image_path = if theme.inferred_color_scheme() == ColorScheme::LightOnDark {
-            "bundled/svg/warp-logo-with-light-title.svg"
-        } else {
-            "bundled/svg/warp-logo-with-dark-title.svg"
-        };
 
         let version = ChannelState::app_version().unwrap_or("v#.##.###");
 
@@ -103,19 +95,30 @@ impl SettingsWidget for AboutPageWidget {
                 .with_child(
                     ConstrainedBox::new(
                         Image::new(
-                            AssetSource::Bundled { path: image_path },
+                            AssetSource::Bundled {
+                                path: "bundled/png/nerminal-icon.png",
+                            },
                             CacheOption::BySize,
                         )
                         .finish(),
                     )
-                    .with_max_height(100.)
-                    .with_max_width(350.)
+                    .with_max_height(96.)
+                    .with_max_width(96.)
                     .finish(),
+                )
+                .with_child(
+                    ui_builder
+                        .span("Nerminal".to_string())
+                        .build()
+                        .with_margin_top(12.)
+                        .finish(),
                 )
                 .with_child(version_row.finish())
                 .with_child(
                     ui_builder
-                        .span("Copyright 2026 Kleber Ayala. Based on Warp, (c) Denver Technologies, Inc.")
+                        .span(
+                            "A fork of Warp by Denver Technologies, Inc. Free software under AGPL-3.0-only.",
+                        )
                         .build()
                         .with_margin_top(16.)
                         .finish(),

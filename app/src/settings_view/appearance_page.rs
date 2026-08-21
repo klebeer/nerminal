@@ -57,7 +57,7 @@ use crate::features::FeatureFlag;
 use crate::gpu_state::{GPUState, GPUStateEvent};
 use crate::prompt::editor_modal::OpenSource as PromptEditorOpenSource;
 use crate::server::telemetry::{InputUXChangeOrigin, TelemetryEvent};
-use crate::settings::app_icon::{AppIconSettings, ShowDockIconState};
+use crate::settings::app_icon::{AppIcon, AppIconSettings, ShowDockIconState};
 use crate::settings::{
     AIFontName, AISettings, AppEditorSettings, CodeSettings, CursorBlink, CursorBlinkEnabled,
     CursorDisplayType, DEFAULT_MONOSPACE_FONT_NAME, EnforceMinimumContrast, FocusPaneOnHover,
@@ -508,6 +508,7 @@ pub enum AppearancePageAction {
         from_binding: bool,
     },
     SetInputType(InputBoxType),
+    SetAppIcon(AppIcon),
     ToggleShowDockIcon,
     SetCursorType(CursorDisplayType),
     SetWorkspaceDecorationVisibility(WorkspaceDecorationVisibility),
@@ -574,6 +575,7 @@ pub struct AppearanceSettingsPageView {
     thin_strokes_dropdown: ViewHandle<Dropdown<AppearancePageAction>>,
     enforce_min_contrast_dropdown: ViewHandle<Dropdown<AppearancePageAction>>,
     input_mode_dropdown: ViewHandle<Dropdown<AppearancePageAction>>,
+    app_icon_dropdown: ViewHandle<Dropdown<AppearancePageAction>>,
     input_type_radio_state: RadioButtonStateHandle,
     workspace_decorations_dropdown: ViewHandle<Dropdown<AppearancePageAction>>,
     tab_close_button_position_dropdown: ViewHandle<Dropdown<AppearancePageAction>>,
@@ -695,6 +697,7 @@ impl TypedActionView for AppearanceSettingsPageView {
                 from_binding,
             } => self.set_input_mode(*new_mode, *from_binding, ctx),
             SetInputType(input_type) => self.set_input_type(*input_type, ctx),
+            SetAppIcon(new_icon) => self.set_app_icon(*new_icon, ctx),
             ToggleShowDockIcon => self.toggle_show_dock_icon(ctx),
             SetCursorType(cursor_display_type) => self.set_cursor_type(*cursor_display_type, ctx),
             OpacitySliderDragged(val) => self.set_opacity(*val, false, ctx),
@@ -1231,6 +1234,32 @@ impl AppearanceSettingsPageView {
             dropdown
         });
 
+        let app_icon_dropdown = ctx.add_typed_action_view(|ctx| {
+            let mut dropdown = Dropdown::new(ctx);
+            dropdown.set_top_bar_max_width(INPUT_MODE_DROPDOWN_WIDTH);
+            dropdown.set_menu_width(INPUT_MODE_DROPDOWN_WIDTH, ctx);
+
+            let values: Vec<AppIcon> = all::<AppIcon>().collect();
+            let current_value = *AppIconSettings::as_ref(ctx).app_icon;
+            let selected_index = values
+                .iter()
+                .position(|val| *val == current_value)
+                .unwrap_or_default();
+
+            dropdown.add_items(
+                values
+                    .into_iter()
+                    .map(|val| {
+                        DropdownItem::new(val.display_name(), AppearancePageAction::SetAppIcon(val))
+                    })
+                    .collect(),
+                ctx,
+            );
+            dropdown.set_selected_by_index(selected_index, ctx);
+
+            dropdown
+        });
+
         let enforce_min_contrast_dropdown = ctx.add_typed_action_view(|ctx| {
             let mut dropdown = Dropdown::new(ctx);
 
@@ -1308,6 +1337,7 @@ impl AppearanceSettingsPageView {
             font_weight_dropdown,
             thin_strokes_dropdown,
             input_mode_dropdown,
+            app_icon_dropdown,
             input_type_radio_state,
             enforce_min_contrast_dropdown,
             workspace_decorations_dropdown: Self::build_workspace_decoration_visibility_dropdown(
@@ -2370,6 +2400,12 @@ impl AppearanceSettingsPageView {
         }
     }
 
+    fn set_app_icon(&mut self, new_icon: AppIcon, ctx: &mut ViewContext<Self>) {
+        AppIconSettings::handle(ctx).update(ctx, |app_icon_settings, ctx| {
+            report_if_error!(app_icon_settings.app_icon.set_value(new_icon, ctx));
+        });
+    }
+
     fn toggle_show_dock_icon(&mut self, ctx: &mut ViewContext<Self>) {
         AppIconSettings::handle(ctx).update(ctx, |app_icon_settings, ctx| {
             report_if_error!(app_icon_settings.show_dock_icon.toggle_and_save_value(ctx));
@@ -2965,7 +3001,7 @@ impl SettingsWidget for CustomAppIconWidget {
     type View = AppearanceSettingsPageView;
 
     fn search_terms(&self) -> &str {
-        "dock cmd tab app switcher"
+        "customize custom app icon icons dock cmd tab app switcher"
     }
 
     fn render(
@@ -2974,6 +3010,16 @@ impl SettingsWidget for CustomAppIconWidget {
         appearance: &Appearance,
         app: &AppContext,
     ) -> Box<dyn Element> {
+        let icon_dropdown = render_dropdown_item(
+            appearance,
+            "Customize your app icon",
+            None,
+            None,
+            LocalOnlyIconState::Hidden,
+            None,
+            &view.app_icon_dropdown,
+        );
+
         let show_dock_icon_toggle = render_body_item::<AppearancePageAction>(
             "Show Nerminal in Dock".into(),
             None,
@@ -2997,13 +3043,14 @@ impl SettingsWidget for CustomAppIconWidget {
             None,
         );
 
+        let column = Flex::column().with_child(icon_dropdown);
         if AppIconSettings::as_ref(app)
             .show_dock_icon
             .is_supported_on_current_platform()
         {
-            Flex::column().with_child(show_dock_icon_toggle).finish()
+            column.with_child(show_dock_icon_toggle).finish()
         } else {
-            Flex::column().finish()
+            column.finish()
         }
     }
 }

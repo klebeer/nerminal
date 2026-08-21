@@ -203,7 +203,8 @@ define_settings_group!(AppEditorSettings, settings: [
     },
     vim_mode: VimModeEnabled {
         type: bool,
-        default: false,
+        // Default matches the shipped configuration; override in settings.toml.
+        default: true,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
         surface: settings::SettingSurfaces::ALL,

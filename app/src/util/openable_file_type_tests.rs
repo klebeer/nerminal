@@ -57,7 +57,7 @@ fn test_resolve_file_target_warp_uses_default_layout() {
 /// external editor or the system default app, even when user settings prefer one.
 #[test]
 #[cfg(feature = "local_fs")]
-fn test_resolve_file_target_to_open_in_warp_never_leaves_warp() {
+fn test_resolve_file_target_to_open_in_nerminal_never_leaves_warp() {
     use crate::util::file::external_editor::settings::{
         OpenCodePanelsFileEditor, OpenConversationLayoutPreference, OpenFileEditor, OpenFileLayout,
         PreferMarkdownViewer, PreferTabbedEditorView,
@@ -74,7 +74,7 @@ fn test_resolve_file_target_to_open_in_warp_never_leaves_warp() {
         open_conversation_layout_preference: OpenConversationLayoutPreference::new(None),
     };
     for path in ["README.md", "data.txt", "main.rs", "image.png", "script.sh"] {
-        let target = resolve_file_target_to_open_in_warp(Path::new(path), &settings, None);
+        let target = resolve_file_target_to_open_in_nerminal(Path::new(path), &settings, None);
         assert!(
             matches!(
                 target,

@@ -13,7 +13,7 @@ use warpui::{
 };
 
 use crate::appearance::Appearance;
-use crate::settings_view::{SettingsSection, custom_model_routers_widget_id};
+use crate::settings_view::SettingsSection;
 use crate::ui_components::icons::Icon;
 use crate::view_components::action_button::{
     ActionButton, ActionButtonTheme, ButtonSize, NakedTheme, PrimaryTheme,
@@ -39,6 +39,8 @@ impl FeatureIntroId {
     }
 }
 
+// Never constructed while FEATURE_INTROS is empty, which it is in this build.
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum FeatureIntroCtaTarget {
     SettingsWidget {
@@ -69,19 +71,7 @@ pub struct FeatureIntro {
 
 /// The registry of feature-intro popovers, in priority order. On startup the
 /// first entry whose id has not yet been seen is shown.
-pub const FEATURE_INTROS: &[FeatureIntro] = &[FeatureIntro {
-    id: FeatureIntroId::CustomModelRouter,
-    hero_image_path: "async/png/onboarding/custom_model_router_intro_banner.png",
-    badge: Some("NEW"),
-    title: "Build a custom model router for the Warp Agent.",
-    description: "Custom routers can be complexity-based, where tasks are routed based on how difficult they are, or rule-based, where they are routed based on a set of natural language prompts.",
-    description_icon: Some(Icon::Compass),
-    cta_label: "Get started",
-    cta_target: Some(FeatureIntroCtaTarget::SettingsWidget {
-        page: SettingsSection::WarpAgent,
-        widget_id: custom_model_routers_widget_id,
-    }),
-}];
+pub const FEATURE_INTROS: &[FeatureIntro] = &[];
 
 /// Looks up a feature-intro descriptor by its id.
 pub fn feature_intro_by_id(id: FeatureIntroId) -> Option<&'static FeatureIntro> {

@@ -9,7 +9,8 @@ use crate::resource_center::Tip;
 define_settings_group!(GeneralSettings, settings: [
     show_warning_before_quitting: ShowWarningBeforeQuitting {
         type: bool,
-        default: true,
+        // Default matches the shipped configuration; override in settings.toml.
+        default: false,
         supported_platforms: SupportedPlatforms::DESKTOP,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
         surface: settings::SettingSurfaces::GUI,
@@ -116,7 +117,7 @@ define_settings_group!(GeneralSettings, settings: [
         surface: settings::SettingSurfaces::GUI,
         private: true,
     },
-    open_in_warp_banner_dismissed_for_markdown: OpenInWarpBannerDismissedMarkdown {
+    open_in_nerminal_banner_dismissed_for_markdown: OpenInNerminalBannerDismissedMarkdown {
         type: bool,
         default: false,
         supported_platforms: SupportedPlatforms::ALL,
@@ -124,7 +125,7 @@ define_settings_group!(GeneralSettings, settings: [
         surface: settings::SettingSurfaces::GUI,
         private: true,
     },
-    open_in_warp_banner_dismissed_for_code_and_text: OpenInWarpBannerDismissedCode {
+    open_in_nerminal_banner_dismissed_for_code_and_text: OpenInNerminalBannerDismissedCode {
         type: bool,
         default: false,
         supported_platforms: SupportedPlatforms::ALL,

@@ -73,7 +73,9 @@ impl SecretDisplayMode {
 define_settings_group!(SafeModeSettings, settings: [
     safe_mode_enabled: SafeModeEnabled {
         type: bool,
-        default: false,
+        // Always on: secrets are redacted before anything reaches the local
+        // database. There is no reason to let a terminal write them to disk.
+        default: true,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
         surface: settings::SettingSurfaces::GUI,

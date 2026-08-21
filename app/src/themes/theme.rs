@@ -49,9 +49,9 @@ pub enum ThemeKind {
     Adeberry,
     #[schemars(description = "Phenomenon")]
     Phenomenon,
-    #[default]
     #[schemars(description = "Dark")]
     Dark,
+    #[default]
     #[schemars(description = "Dracula")]
     Dracula,
     #[schemars(description = "Fancy Dracula")]

@@ -4,6 +4,11 @@ use warpui::{AddSingletonModel, AppContext, AssetProvider, Entity, ModelContext,
 
 #[cfg(target_os = "macos")]
 mod macos_app_icon {
+    pub use objc2::rc::{Retained, autoreleasepool};
+    pub use objc2::{AnyThread, MainThreadMarker};
+    pub use objc2_app_kit::{NSApplication, NSImage};
+    pub use objc2_foundation::NSData;
+
     pub use crate::settings::app_icon::{AppIconSettings, AppIconSettingsChangedEvent};
 }
 use anyhow::anyhow;
@@ -38,6 +43,9 @@ impl AppearanceManager {
         {
             ctx.subscribe_to_model(&AppIconSettings::handle(ctx), move |me, _, event, ctx| {
                 match event {
+                    AppIconSettingsChangedEvent::AppIconState { .. } => {
+                        me.set_app_icon(ctx);
+                    }
                     AppIconSettingsChangedEvent::ShowDockIconState { .. } => {
                         me.apply_dock_icon_visibility(ctx);
                     }
@@ -136,6 +144,32 @@ impl AppearanceManager {
     pub fn set_transient_theme(&mut self, theme: ThemeKind, ctx: &mut ModelContext<Self>) {
         self.transient_theme = Some(Settings::theme_for_theme_kind(&theme, ctx));
         self.refresh_theme_state(ctx);
+    }
+
+    /// Swaps the dock icon at runtime. The bundled `.icns` stays as the
+    /// on-disk icon; this only overrides the image of the running app, so the
+    /// choice is re-applied on every launch.
+    #[cfg(target_os = "macos")]
+    pub fn set_app_icon(&self, app: &AppContext) {
+        let icon = *AppIconSettings::as_ref(app).app_icon.value();
+        let Ok(bytes) = ASSETS.get(icon.asset_path()) else {
+            log::warn!("Missing asset for app icon {icon:?}");
+            return;
+        };
+
+        autoreleasepool(|_| {
+            // SAFETY: only reachable with an `&AppContext`, which is main-thread only.
+            let mtm = unsafe { MainThreadMarker::new_unchecked() };
+            let data = NSData::with_bytes(&bytes);
+            let image: Option<Retained<NSImage>> = NSImage::initWithData(NSImage::alloc(), &data);
+            let Some(image) = image else {
+                log::warn!("Could not decode app icon {icon:?}");
+                return;
+            };
+            let ns_app = NSApplication::sharedApplication(mtm);
+            // SAFETY: the image is non-nil here.
+            unsafe { ns_app.setApplicationIconImage(Some(&image)) };
+        });
     }
 
     #[cfg(target_os = "macos")]

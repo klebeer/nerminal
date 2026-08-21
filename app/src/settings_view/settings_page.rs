@@ -45,19 +45,16 @@ use super::mcp_servers_page::MCPServersSettingsPageView;
 use super::privacy_page::PrivacyPageView;
 use super::referrals_page::ReferralsPageView;
 use super::scripting_page::ScriptingSettingsPageView;
+use super::shell_integration_page::ShellIntegrationPageView;
 use super::show_blocks_view::ShowBlocksView;
 use super::teams_page::TeamsPageView;
-use super::warp_agent_page::WarpAgentPageView;
 use super::warp_drive_page::WarpDriveSettingsPageView;
-use super::warpify_page::WarpifyPageView;
 use crate::appearance::Appearance;
 use crate::settings::CloudPreferencesSettings;
 use crate::themes::theme::Fill;
 use crate::ui_components::blended_colors;
 use crate::ui_components::icons::Icon;
-use crate::view_components::{
-    Dropdown, DropdownItemAction, FilterableDropdown, SubmittableTextInput,
-};
+use crate::view_components::{Dropdown, DropdownItemAction, SubmittableTextInput};
 
 pub const TOGGLE_BUTTON_RIGHT_PADDING: f32 = 5.;
 pub const HEADER_PADDING: f32 = 15.;
@@ -119,10 +116,9 @@ pub enum SettingsPageViewHandle {
     Teams(ViewHandle<TeamsPageView>),
     OzCloudAPIKeys(ViewHandle<super::platform_page::PlatformPageView>),
     Privacy(ViewHandle<PrivacyPageView>),
-    Warpify(ViewHandle<WarpifyPageView>),
+    ShellIntegration(ViewHandle<ShellIntegrationPageView>),
     Referrals(ViewHandle<ReferralsPageView>),
     Scripting(ViewHandle<ScriptingSettingsPageView>),
-    WarpAgent(ViewHandle<WarpAgentPageView>),
     AgentProfiles(ViewHandle<AgentProfilesPageView>),
     Knowledge(ViewHandle<KnowledgePageView>),
     CLIAgents(ViewHandle<CLIAgentsPageView>),
@@ -147,10 +143,9 @@ impl SettingsPageViewHandle {
             Teams(view_handle) => ChildView::new(view_handle).finish(),
             OzCloudAPIKeys(view_handle) => ChildView::new(view_handle).finish(),
             Privacy(view_handle) => ChildView::new(view_handle).finish(),
-            Warpify(view_handle) => ChildView::new(view_handle).finish(),
+            ShellIntegration(view_handle) => ChildView::new(view_handle).finish(),
             Referrals(view_handle) => ChildView::new(view_handle).finish(),
             Scripting(view_handle) => ChildView::new(view_handle).finish(),
-            WarpAgent(view_handle) => ChildView::new(view_handle).finish(),
             AgentProfiles(view_handle) => ChildView::new(view_handle).finish(),
             Knowledge(view_handle) => ChildView::new(view_handle).finish(),
             CLIAgents(view_handle) => ChildView::new(view_handle).finish(),
@@ -1014,49 +1009,6 @@ pub(crate) fn render_dropdown_item<T: DropdownItemAction>(
     local_only_icon_state: LocalOnlyIconState,
     color_override: Option<Fill>,
     handle: &ViewHandle<Dropdown<T>>,
-) -> Box<dyn Element> {
-    let row = Flex::row().with_cross_axis_alignment(CrossAxisAlignment::Center);
-
-    let dropdown_item_label = Align::new(render_dropdown_item_label(
-        label.to_string(),
-        secondary_text.map(|secondary_text| secondary_text.to_string()),
-        local_only_icon_state,
-        color_override,
-        appearance,
-    ))
-    .left()
-    .finish();
-
-    let mut dropdown = Flex::column().with_child(ChildView::new(handle).finish());
-    if let Some(dropdown_subtext) = dropdown_subtext {
-        dropdown.add_child(dropdown_subtext);
-    }
-
-    row.with_child(
-        Shrinkable::new(
-            1.0,
-            Container::new(dropdown_item_label)
-                .with_margin_bottom(4.)
-                .with_padding_right(16.)
-                .finish(),
-        )
-        .finish(),
-    )
-    .with_child(dropdown.finish())
-    .finish()
-}
-
-/// Like [`render_dropdown_item`], but for a [`FilterableDropdown`] (a dropdown
-/// with a built-in search box). Used for long option lists such as the
-/// voice-input Speech Language picker.
-pub(crate) fn render_filterable_dropdown_item<T: DropdownItemAction>(
-    appearance: &Appearance,
-    label: &str,
-    secondary_text: Option<&str>,
-    dropdown_subtext: Option<Box<dyn Element>>,
-    local_only_icon_state: LocalOnlyIconState,
-    color_override: Option<Fill>,
-    handle: &ViewHandle<FilterableDropdown<T>>,
 ) -> Box<dyn Element> {
     let row = Flex::row().with_cross_axis_alignment(CrossAxisAlignment::Center);
 

@@ -16,7 +16,7 @@ use warpui::units::Lines;
 
 use super::inline_banner::{
     AnonymousUserLoginBannerAction, AwsBedrockLoginBannerAction, AwsCliNotInstalledBannerAction,
-    OpenInWarpBannerAction, VimModeBannerAction,
+    OpenInNerminalBannerAction, VimModeBannerAction,
 };
 use super::{
     AliasExpansionBannerAction, ContextMenuAction, GridHighlightedLink, InputContextMenuAction,
@@ -290,7 +290,7 @@ pub enum TerminalAction {
     ShowSubshellBanner(String),
     InsertMostRecentCommandCorrection,
     AliasExpansionBanner(AliasExpansionBannerAction),
-    OpenInWarpBanner(OpenInWarpBannerAction),
+    OpenInNerminalBanner(OpenInNerminalBannerAction),
     OpenBlockFilterEditor(BlockIndex),
     OnboardingFlow(OnboardingVersion),
     ImportSettings,
@@ -620,7 +620,7 @@ impl fmt::Debug for TerminalAction {
             ShowSubshellBanner(_) => f.write_str("ShowSubshellBanner"),
             InsertMostRecentCommandCorrection => f.write_str("InsertMostRecentCommandCorrection"),
             AliasExpansionBanner(action) => write!(f, "AliasExpansionBanner({action:?}"),
-            OpenInWarpBanner(action) => write!(f, "OpenInWarpBanner({action:?})"),
+            OpenInNerminalBanner(action) => write!(f, "OpenInNerminalBanner({action:?})"),
             OpenBlockFilterEditor(block_index) => {
                 write!(f, "OpenBlockFilterEditor({block_index:?})")
             }

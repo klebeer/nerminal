@@ -739,10 +739,7 @@ fn test_settings_widget_deeplink_target() {
         settings_widget_deeplink_target("global_hotkey").map(|(section, _)| section),
         Some(SettingsSection::Features),
     );
-    assert_eq!(
-        settings_widget_deeplink_target("custom_router").map(|(section, _)| section),
-        Some(SettingsSection::WarpAgent),
-    );
+    assert!(settings_widget_deeplink_target("custom_router").is_none());
     #[cfg(not(target_family = "wasm"))]
     assert_eq!(
         settings_widget_deeplink_target("cli_agents").map(|(section, _)| section),
@@ -767,10 +764,7 @@ fn test_settings_section_for_simple_subpage() {
         settings_section_for_simple_subpage("platform"),
         Some(SettingsSection::OzCloudAPIKeys),
     );
-    assert_eq!(
-        settings_section_for_simple_subpage("warp_agent"),
-        Some(SettingsSection::WarpAgent),
-    );
+    assert!(settings_section_for_simple_subpage("warp_agent").is_none());
     assert!(settings_section_for_simple_subpage("not_a_subpage").is_none());
 }
 

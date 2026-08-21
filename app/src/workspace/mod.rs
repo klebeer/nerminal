@@ -229,13 +229,13 @@ pub fn init(app: &mut AppContext) {
                 .with_context_predicate(id!("Workspace")),
                 EditableBinding::new(
                     "workspace:open_agent_cli_launch_modal",
-                    "[Debug] Open Warp Agent CLI Launch Modal",
+                    "[Debug] Open Agent CLI Launch Modal",
                     WorkspaceAction::OpenAgentCliLaunchModal,
                 )
                 .with_context_predicate(id!("Workspace")),
                 EditableBinding::new(
                     "workspace:reset_agent_cli_launch_modal_state",
-                    "[Debug] Reset Warp Agent CLI Launch Modal State",
+                    "[Debug] Reset Agent CLI Launch Modal State",
                     WorkspaceAction::ResetAgentCliLaunchModalState,
                 )
                 .with_context_predicate(id!("Workspace")),
@@ -283,13 +283,13 @@ pub fn init(app: &mut AppContext) {
                 .with_context_predicate(id!("Workspace")),
                 EditableBinding::new(
                     "workspace:install_opencode_warp_plugin",
-                    "[Debug] Install OpenCode Warp plugin",
+                    "[Debug] Install OpenCode plugin",
                     WorkspaceAction::InstallOpenCodeWarpPlugin,
                 )
                 .with_context_predicate(id!("Workspace")),
                 EditableBinding::new(
                     "workspace:use_local_opencode_warp_plugin",
-                    "[Debug] Use local OpenCode Warp plugin (testing only)",
+                    "[Debug] Use local OpenCode plugin (testing only)",
                     WorkspaceAction::UseLocalOpenCodeWarpPlugin,
                 )
                 .with_context_predicate(id!("Workspace")),
@@ -821,7 +821,7 @@ pub fn init(app: &mut AppContext) {
         .with_linux_or_windows_key_binding("ctrl-shift->"),
         EditableBinding::new(
             LEFT_PANEL_WARP_DRIVE_BINDING_NAME,
-            BindingDescription::new("Left Panel: Warp Drive"),
+            BindingDescription::new("Left Panel: Drive"),
             WorkspaceAction::ToggleWarpDrive,
         )
         .with_group(bindings::BindingGroup::Navigation.as_str())
@@ -847,7 +847,7 @@ pub fn init(app: &mut AppContext) {
         .with_linux_or_windows_key_binding("alt-shift-F"),
         EditableBinding::new(
             TOGGLE_WARP_DRIVE_BINDING_NAME,
-            BindingDescription::new("Toggle Warp Drive")
+            BindingDescription::new("Toggle Drive")
                 .with_custom_description(bindings::MAC_MENUS_CONTEXT, "Warp Drive"),
             WorkspaceAction::ToggleWarpDrive,
         )
@@ -1087,7 +1087,7 @@ pub fn init(app: &mut AppContext) {
     app.register_editable_bindings([
         EditableBinding::new(
             "workspace:terminate_app",
-            "Quit Warp",
+            "Quit Nerminal",
             WorkspaceAction::TerminateApp,
         )
         .with_context_predicate(id!("Workspace"))
@@ -1192,7 +1192,7 @@ pub fn init(app: &mut AppContext) {
         EditableBinding::new(
             // If you rename this name, please update the name in command_palette/action/data_source.rs
             "workspace:search_drive",
-            "Search Warp Drive",
+            "Search Drive",
             WorkspaceAction::OpenPalette {
                 mode: PaletteMode::WarpDrive,
                 source: PaletteSource::Keybinding,
@@ -1247,7 +1247,7 @@ pub fn init(app: &mut AppContext) {
     if cfg!(not(target_family = "wasm")) {
         app.register_editable_bindings([EditableBinding::new(
             "workspace:export_all_warp_drive_objects",
-            "Export all Warp Drive objects",
+            "Export all Drive objects",
             WorkspaceAction::ExportAllWarpDriveObjects,
         )
         .with_group(bindings::BindingGroup::Settings.as_str())
@@ -1260,14 +1260,14 @@ pub fn init(app: &mut AppContext) {
         app.register_editable_bindings([
             EditableBinding::new(
                 "workspace:install_cli",
-                "Install Oz CLI globally for use outside of Warp",
+                "Install Oz CLI globally for use outside of Nerminal",
                 WorkspaceAction::InstallOz,
             )
             .with_group(bindings::BindingGroup::Settings.as_str())
             .with_context_predicate(id!("Workspace")),
             EditableBinding::new(
                 "workspace:uninstall_cli",
-                "Undo global Oz CLI installation (oz will still work within Warp)",
+                "Undo global Oz CLI installation (oz will still work within Nerminal)",
                 WorkspaceAction::UninstallOz,
             )
             .with_group(bindings::BindingGroup::Settings.as_str())
@@ -1277,14 +1277,14 @@ pub fn init(app: &mut AppContext) {
             app.register_editable_bindings([
                 EditableBinding::new(
                     "workspace:install_warpctrl",
-                    "Install Warp Control CLI globally for use outside of Warp",
+                    "Install the control CLI globally for use outside of Nerminal",
                     WorkspaceAction::InstallWarpctrl,
                 )
                 .with_group(bindings::BindingGroup::Settings.as_str())
                 .with_context_predicate(id!("Workspace")),
                 EditableBinding::new(
                     "workspace:uninstall_warpctrl",
-                    "Undo global Warp Control CLI installation (warpctrl will still work within Warp)",
+                    "Undo global control CLI installation (nerminalctrl will still work within Nerminal)",
                     WorkspaceAction::UninstallWarpctrl,
                 )
                 .with_group(bindings::BindingGroup::Settings.as_str())
@@ -1338,7 +1338,7 @@ pub fn init(app: &mut AppContext) {
         .with_custom_action(CustomAction::NewAgentModePane),
         EditableBinding::new(
             "workspace:toggle_ai_assistant",
-            "Toggle Warp AI",
+            "Toggle the agent",
             WorkspaceAction::ToggleAIAssistant,
         )
         .with_enabled(|| !FeatureFlag::AgentMode.is_enabled())
@@ -1593,7 +1593,7 @@ fn add_open_setting_pages_as_editable_binding(app: &mut AppContext) {
         EditableBinding::new(
             "workspace:show_settings_about_page",
             BindingDescription::new("Open Settings: About")
-                .with_custom_description(bindings::MAC_MENUS_CONTEXT, "About Warp"),
+                .with_custom_description(bindings::MAC_MENUS_CONTEXT, "About Nerminal"),
             WorkspaceAction::ShowSettingsPage(SettingsSection::About),
         )
         .with_group(bindings::BindingGroup::Settings.as_str())
@@ -1616,19 +1616,13 @@ fn add_open_setting_pages_as_editable_binding(app: &mut AppContext) {
         .with_group(bindings::BindingGroup::Settings.as_str())
         .with_context_predicate(id!("Workspace")),
         EditableBinding::new(
-            "workspace:show_settings_warpify_page",
-            BindingDescription::new("Open Settings: Warpify")
-                .with_custom_description(bindings::MAC_MENUS_CONTEXT, "Configure Warpify..."),
-            WorkspaceAction::ShowSettingsPage(SettingsSection::Warpify),
+            "workspace:show_settings_shell_integration_page",
+            BindingDescription::new("Open Settings: Shell integration").with_custom_description(
+                bindings::MAC_MENUS_CONTEXT,
+                "Configure shell integration...",
+            ),
+            WorkspaceAction::ShowSettingsPage(SettingsSection::ShellIntegration),
         )
-        .with_group(bindings::BindingGroup::Settings.as_str())
-        .with_context_predicate(id!("Workspace")),
-        EditableBinding::new(
-            "workspace:show_ai_settings_page",
-            BindingDescription::new("Open Settings: AI"),
-            WorkspaceAction::ShowSettingsPage(SettingsSection::WarpAgent),
-        )
-        .with_enabled(|| FeatureFlag::AgentMode.is_enabled())
         .with_group(bindings::BindingGroup::Settings.as_str())
         .with_context_predicate(id!("Workspace")),
         EditableBinding::new(
@@ -1710,7 +1704,7 @@ fn add_overflow_menu_items_as_editable_binding(app: &mut AppContext) {
         #[cfg(not(target_family = "wasm"))]
         EditableBinding::new(
             "workspace:view_logs",
-            "View Warp logs",
+            "View Nerminal logs",
             WorkspaceAction::ViewLogs,
         )
         .with_context_predicate(id!("Workspace")),

@@ -465,8 +465,8 @@ impl CustomizeUISlide {
         "async/png/onboarding/agent_intention/customize_fileexplorer_horizontal.png",
         "async/png/onboarding/agent_intention/customize_filesearch_vertical.png",
         "async/png/onboarding/agent_intention/customize_filesearch_horizontal.png",
-        "async/png/onboarding/agent_intention/customize_warpdrive_vertical.png",
-        "async/png/onboarding/agent_intention/customize_warpdrive_horizontal.png",
+        "async/png/onboarding/agent_intention/customize_conversation_vertical.png",
+        "async/png/onboarding/agent_intention/customize_conversation_horizontal.png",
         "async/png/onboarding/agent_intention/customize_codereview_enabled_vertical.png",
         "async/png/onboarding/agent_intention/customize_codereview_enabled_horizontal.png",
         "async/png/onboarding/agent_intention/customize_codereview_disabled_vertical.png",
@@ -478,8 +478,8 @@ impl CustomizeUISlide {
         "async/png/onboarding/terminal_intention/terminal_customize_fileexplorer_horizontal.png",
         "async/png/onboarding/terminal_intention/terminal_customize_filesearch_vertical.png",
         "async/png/onboarding/terminal_intention/terminal_customize_filesearch_horizontal.png",
-        "async/png/onboarding/terminal_intention/terminal_customize_warpdrive_vertical.png",
-        "async/png/onboarding/terminal_intention/terminal_customize_warpdrive_horizontal.png",
+        "async/png/onboarding/terminal_intention/terminal_customize_fileexplorer_vertical.png",
+        "async/png/onboarding/terminal_intention/terminal_customize_fileexplorer_horizontal.png",
         "async/png/onboarding/terminal_intention/terminal_codereview_enabled.png",
         "async/png/onboarding/terminal_intention/terminal_codereview_disabled.png",
     ];
@@ -559,10 +559,10 @@ impl CustomizeUISlide {
                                 "async/png/onboarding/agent_intention/customize_filesearch_horizontal.png"
                             }
                             (ToolsPanelSubSetting::WarpDrive, true) => {
-                                "async/png/onboarding/agent_intention/customize_warpdrive_vertical.png"
+                                "async/png/onboarding/agent_intention/customize_conversation_vertical.png"
                             }
                             (ToolsPanelSubSetting::WarpDrive, false) => {
-                                "async/png/onboarding/agent_intention/customize_warpdrive_horizontal.png"
+                                "async/png/onboarding/agent_intention/customize_conversation_horizontal.png"
                             }
                         }
                     } else {
@@ -589,10 +589,10 @@ impl CustomizeUISlide {
                                 "async/png/onboarding/terminal_intention/terminal_customize_filesearch_horizontal.png"
                             }
                             (ToolsPanelSubSetting::WarpDrive, true) => {
-                                "async/png/onboarding/terminal_intention/terminal_customize_warpdrive_vertical.png"
+                                "async/png/onboarding/terminal_intention/terminal_customize_fileexplorer_vertical.png"
                             }
                             (ToolsPanelSubSetting::WarpDrive, false) => {
-                                "async/png/onboarding/terminal_intention/terminal_customize_warpdrive_horizontal.png"
+                                "async/png/onboarding/terminal_intention/terminal_customize_fileexplorer_horizontal.png"
                             }
                         }
                     }

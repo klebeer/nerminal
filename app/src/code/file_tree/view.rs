@@ -58,7 +58,7 @@ use crate::util::openable_file_type::{
 };
 #[cfg(feature = "local_fs")]
 use crate::util::openable_file_type::{
-    resolve_file_target_to_open_in_warp, resolve_file_target_with_editor_choice,
+    resolve_file_target_to_open_in_nerminal, resolve_file_target_with_editor_choice,
 };
 
 mod editing;
@@ -2214,7 +2214,7 @@ impl FileTreeView {
     ) {
         let settings = EditorSettings::as_ref(ctx);
         let target = if editor_layout.is_some() {
-            resolve_file_target_to_open_in_warp(path, settings, editor_layout)
+            resolve_file_target_to_open_in_nerminal(path, settings, editor_layout)
         } else {
             resolve_file_target_with_editor_choice(
                 path,

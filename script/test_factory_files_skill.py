@@ -113,7 +113,7 @@ def fake_server(validate_body, validate_status: int = 200, raw_body: bytes | Non
 def run_validator(root: Path, server_url: str, api_key: str = "", extra: list[str] | None = None):
     environment = os.environ.copy()
     environment.pop("WARP_API_KEY", None)
-    environment.pop("WARP_SERVER_ROOT", None)
+    environment.pop("NERMINAL_SERVER_ROOT", None)
     if api_key:
         environment["WARP_API_KEY"] = api_key
     return subprocess.run(

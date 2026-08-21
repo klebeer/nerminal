@@ -36,8 +36,8 @@ use super::billing_and_usage_page::{
     BillingAndUsagePageAction, BillingUsageTab, CHECKOUT_PENDING_MESSAGE,
     render_premium_upgrade_savings_note,
 };
+use super::plan_header_presentation;
 use super::settings_page::{AdditionalInfo, render_customer_type_badge, render_info_icon};
-use super::{SettingsSection, plan_header_presentation};
 use crate::ai::AIRequestUsageModel;
 use crate::ai::request_usage_model::{
     AMBIENT_AGENT_TRIAL_CREDIT_THRESHOLD, BonusGrant, BonusGrantScope, BonusGrantType,
@@ -2256,7 +2256,7 @@ impl TypedActionView for BillingAndUsagePageV2View {
             BillingAndUsagePageAction::NavigateToByokSettings => {
                 ctx.dispatch_typed_action_deferred(WorkspaceAction::ShowSettingsPageWithSearch {
                     search_query: "api".to_string(),
-                    section: Some(SettingsSection::WarpAgent),
+                    section: None,
                 });
             }
         }

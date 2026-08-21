@@ -6,9 +6,8 @@ use crate::terminal::block_list_viewport::InputMode;
 define_settings_group!(InputModeSettings, settings: [
     input_mode: InputModeState {
         type: InputMode,
-        // Note that for new users, we now override this default value in SettingsInitializer
-        // to set it to InputMode::Waterfall.
-        default: InputMode::PinnedToBottom,
+        // Default matches the shipped configuration; override in settings.toml.
+        default: InputMode::Waterfall,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
         surface: settings::SettingSurfaces::GUI,

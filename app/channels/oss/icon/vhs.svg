@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+
+<clipPath id="frame"><rect x="10" y="10" width="492" height="492" rx="112" ry="112"/></clipPath>
+</defs>
+<g clip-path="url(#frame)">
+
+    <rect x="0" y="0" width="512" height="512" fill="#0e1016"/>
+    <rect x="0" y="150" width="512" height="6" fill="#ffffff" opacity="0.05"/><rect x="0" y="238" width="512" height="4" fill="#ffffff" opacity="0.05"/><rect x="0" y="300" width="512" height="8" fill="#ffffff" opacity="0.05"/><rect x="0" y="392" width="512" height="5" fill="#ffffff" opacity="0.05"/>
+    <g opacity="0.55">
+      <rect x="84" y="116" width="352" height="230" rx="36" fill="none"
+            stroke="#ff2d95" stroke-width="8"/>
+    </g>
+    <g opacity="0.55">
+      <rect x="76" y="108" width="352" height="230" rx="36" fill="none"
+            stroke="#00e5ff" stroke-width="8"/>
+    </g>
+    
+    <path d="M226 322 h60 l14 60 h-88 z" fill="#191c24"/>
+    <rect x="176" y="378" width="160" height="22" rx="11" fill="#191c24"
+          stroke="#d8dde6" stroke-width="5"/>
+    <rect x="80" y="112" width="352" height="230" rx="36" fill="#191c24"
+          stroke="#d8dde6" stroke-width="6"/>
+    <rect x="116" y="146" width="280" height="168" rx="20" fill="#07080d"/>
+    <g fill="#ffffff" opacity="0.09"><rect x="116" y="150" width="280" height="3"/><rect x="116" y="157" width="280" height="3"/><rect x="116" y="164" width="280" height="3"/><rect x="116" y="171" width="280" height="3"/><rect x="116" y="178" width="280" height="3"/><rect x="116" y="185" width="280" height="3"/><rect x="116" y="192" width="280" height="3"/><rect x="116" y="199" width="280" height="3"/><rect x="116" y="206" width="280" height="3"/><rect x="116" y="213" width="280" height="3"/><rect x="116" y="220" width="280" height="3"/><rect x="116" y="227" width="280" height="3"/><rect x="116" y="234" width="280" height="3"/><rect x="116" y="241" width="280" height="3"/><rect x="116" y="248" width="280" height="3"/><rect x="116" y="255" width="280" height="3"/><rect x="116" y="262" width="280" height="3"/><rect x="116" y="269" width="280" height="3"/><rect x="116" y="276" width="280" height="3"/><rect x="116" y="283" width="280" height="3"/><rect x="116" y="290" width="280" height="3"/><rect x="116" y="297" width="280" height="3"/><rect x="116" y="304" width="280" height="3"/><rect x="116" y="311" width="280" height="3"/></g>
+    
+      <g>
+        <circle cx="190" cy="204" r="44" fill="#0c2b26"/>
+        <circle cx="322" cy="204" r="44" fill="#0c2b26"/>
+        <g fill="none" stroke="#07060f" stroke-width="15">
+          <circle cx="190" cy="204" r="44"/>
+          <circle cx="322" cy="204" r="44"/>
+          <path d="M234 200 q22 -14 44 0"/>
+          <path d="M144 196 l-30 -14"/>
+          <path d="M368 196 l30 -14"/>
+        </g>
+        <rect x="243" y="178" width="26" height="30" rx="4" fill="#f4f1e4"
+              opacity="0.92" transform="rotate(-12 256 193)"/>
+        <g stroke="#eafcff" stroke-width="9" stroke-linecap="round" opacity="0.5">
+          <line x1="170" y1="192" x2="192" y2="176"/>
+          <line x1="302" y1="192" x2="324" y2="176"/>
+        </g>
+      </g>
+    
+      <g stroke="#39ff9c" stroke-width="13" stroke-linecap="round"
+         stroke-linejoin="round" fill="none">
+        <polyline points="212,258 240,278 212,298"/>
+      </g>
+      <rect x="258" y="288" width="46" height="12" rx="6" fill="#39ff9c"/>
+    <g fill="#ff2d95">
+      <polygon points="132,168 132,190 152,179"/>
+    </g>
+    <rect x="162" y="172" width="58" height="12" rx="3" fill="#ffffff" opacity="0.65"/>
+</g>
+</svg>

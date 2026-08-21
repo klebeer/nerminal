@@ -8,10 +8,9 @@ use warpui::{Entity, ModelContext, SingletonEntity};
 use crate::auth::auth_state::AuthState;
 use crate::settings::input::InputBoxType;
 use crate::settings::{
-    AISettings, FontSettings, InputSettings, PrivacySettings, ThemeSettings, ThinkingDisplayMode,
+    AISettings, FontSettings, InputSettings, PrivacySettings, ThinkingDisplayMode,
 };
 use crate::terminal::session_settings::SessionSettings;
-use crate::themes::theme::ThemeKind;
 
 pub struct SettingsInitializer;
 
@@ -44,15 +43,6 @@ impl SettingsInitializer {
                 // However, for new users, we don't want to add these defaults without their explicit action, so we disable adding them here.
                 settings.disable_default_regex_trigger(ctx);
             });
-
-            if FeatureFlag::DefaultAdeberryTheme.is_enabled() {
-                log::debug!("Setting default theme to Adeberry for new user");
-                ThemeSettings::handle(ctx).update(ctx, |settings, ctx| {
-                    if *settings.theme_kind.value() == ThemeKind::Phenomenon {
-                        report_if_error!(settings.theme_kind.set_value(ThemeKind::Adeberry, ctx));
-                    }
-                });
-            }
 
             if cfg!(windows) {
                 log::debug!("Setting default font size to 16px (12pt) for a new Windows user");

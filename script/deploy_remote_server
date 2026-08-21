@@ -104,7 +104,7 @@ case "$PROFILE_MODE" in
 esac
 
 FEATURES="release_bundle,crash_reporting,standalone,agent_mode_debug,remote_codebase_indexing"
-WARP_BIN="warp"
+NERMINAL_BIN="warp"
 BINARY_NAME="oz-local"
 REMOTE_DIR=".warp-local/remote-server"
 # Global, version-independent resources location read by the daemon. Must
@@ -121,17 +121,17 @@ case "$CARGO_PROFILE" in
     OUTPUT_DIR="$CARGO_TARGET_DIR/$TARGET/$CARGO_PROFILE"
     ;;
 esac
-BUILT_BINARY="$OUTPUT_DIR/$WARP_BIN"
+BUILT_BINARY="$OUTPUT_DIR/$NERMINAL_BIN"
 LOCAL_RESOURCES_DIR="$OUTPUT_DIR/remote-server-resources"
 
 echo "==> Building Oz CLI for $TARGET (profile=$CARGO_PROFILE)"
-echo "    Binary: $WARP_BIN -> $BINARY_NAME"
+echo "    Binary: $NERMINAL_BIN -> $BINARY_NAME"
 echo "    Features: $FEATURES"
 echo ""
 
 cargo build \
     -p warp \
-    --bin "$WARP_BIN" \
+    --bin "$NERMINAL_BIN" \
     --target "$TARGET" \
     --profile "$CARGO_PROFILE" \
     --features "$FEATURES"

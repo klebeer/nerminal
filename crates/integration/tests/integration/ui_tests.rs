@@ -242,7 +242,7 @@ integration_tests! {
 
     test_notebook_pane_tracking,
     test_close_notebook_tab,
-    test_open_in_warp_banner,
+    test_open_in_nerminal_banner,
     test_close_notebook_window,
     test_backspace_inside_raw_mermaid_block_edits_text_without_removing_block,
 

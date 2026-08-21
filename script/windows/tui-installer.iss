@@ -267,9 +267,9 @@ begin
   LauncherContents :=
     '@echo off' + #13#10 +
     'setlocal' + #13#10 +
-    'set "WARP_TUI_MANAGED_ROOT=' + ManagedRoot + '"' + #13#10 +
-    'set /p WARP_TUI_ACTIVE_VERSION=<"%WARP_TUI_MANAGED_ROOT%\current"' + #13#10 +
-    '"%WARP_TUI_MANAGED_ROOT%\versions\%WARP_TUI_ACTIVE_VERSION%\{#MyAppExeName}" %*' + #13#10;
+    'set "NERMINAL_TUI_MANAGED_ROOT=' + ManagedRoot + '"' + #13#10 +
+    'set /p NERMINAL_TUI_ACTIVE_VERSION=<"%NERMINAL_TUI_MANAGED_ROOT%\current"' + #13#10 +
+    '"%NERMINAL_TUI_MANAGED_ROOT%\versions\%NERMINAL_TUI_ACTIVE_VERSION%\{#MyAppExeName}" %*' + #13#10;
   WriteAtomicTextFile(LauncherPath, LauncherContents);
 end;
 

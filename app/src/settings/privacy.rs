@@ -90,7 +90,9 @@ impl settings_value::SettingsValue for CustomSecretRegex {}
 define_settings_group!(WarpDrivePrivacySettings, settings: [
     is_telemetry_enabled: IsTelemetryEnabled {
         type: bool,
-        default: true,
+        // This build ships no telemetry config, so nothing is collected either
+        // way. Off is the honest default.
+        default: false,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::No),
         surface: settings::SettingSurfaces::ALL,
@@ -101,7 +103,7 @@ define_settings_group!(WarpDrivePrivacySettings, settings: [
     },
     is_crash_reporting_enabled: IsCrashReportingEnabled {
         type: bool,
-        default: true,
+        default: false,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::No),
         surface: settings::SettingSurfaces::ALL,
@@ -112,7 +114,7 @@ define_settings_group!(WarpDrivePrivacySettings, settings: [
     },
     is_cloud_conversation_storage_enabled: IsCloudConversationStorageEnabled {
         type: bool,
-        default: true,
+        default: false,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::No),
         surface: settings::SettingSurfaces::ALL,

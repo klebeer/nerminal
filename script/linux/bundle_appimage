@@ -73,9 +73,9 @@ rm -rf "$APP_DIR"
 # deploys the binary, desktop file, and icons by default.
 cd "$OUT_DIR"
 echo "Running linuxdeploy to create the AppImage"
-export WARP_BINARY_NAME="$BINARY_NAME"
-export WARP_PACKAGE_NAME="$PACKAGE_NAME"
-export WARP_BUNDLED_RESOURCES_DIR="${STAGE_DIR}${OPT_DIR}/resources"
+export NERMINAL_BINARY_NAME="$BINARY_NAME"
+export NERMINAL_PACKAGE_NAME="$PACKAGE_NAME"
+export NERMINAL_BUNDLED_RESOURCES_DIR="${STAGE_DIR}${OPT_DIR}/resources"
 export PATH="$WORKSPACE_ROOT_DIR/script/linux:$PATH"
 linuxdeploy \
   --appdir "$APP_DIR" \

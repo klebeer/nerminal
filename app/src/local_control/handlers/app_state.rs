@@ -38,7 +38,7 @@ use crate::settings_view::SettingsSection;
 #[cfg(feature = "local_fs")]
 use crate::util::file::external_editor::EditorSettings;
 #[cfg(feature = "local_fs")]
-use crate::util::openable_file_type::{EditorLayout, resolve_file_target_to_open_in_warp};
+use crate::util::openable_file_type::{EditorLayout, resolve_file_target_to_open_in_nerminal};
 #[cfg(feature = "local_fs")]
 use crate::workspace::PaneViewLocator;
 use crate::workspace::{CommandSearchOptions, InitContent, WorkspaceAction};
@@ -762,7 +762,7 @@ fn file_open(
     {
         let layout = params.new_tab.then_some(EditorLayout::NewTab);
         let file_target =
-            resolve_file_target_to_open_in_warp(&path, EditorSettings::as_ref(ctx), layout);
+            resolve_file_target_to_open_in_nerminal(&path, EditorSettings::as_ref(ctx), layout);
         workspace.update(ctx, |workspace, ctx| {
             workspace.open_file_with_target(
                 path.clone(),

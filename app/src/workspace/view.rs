@@ -467,7 +467,7 @@ use crate::util::links;
 use crate::util::openable_file_type::FileTarget;
 #[cfg(feature = "local_fs")]
 use crate::util::openable_file_type::{
-    EditorLayout, resolve_file_target_to_open_in_warp, resolve_file_target_with_editor_choice,
+    EditorLayout, resolve_file_target_to_open_in_nerminal, resolve_file_target_with_editor_choice,
 };
 use crate::util::traffic_lights::{TrafficLightMouseStates, TrafficLightSide, traffic_light_data};
 use crate::util::truncation::truncate_from_end;
@@ -581,9 +581,7 @@ const TAB_BAR_ICON_PADDING: f32 = 4.;
 
 const TAB_BAR_PILL_WIDTH: f32 = 100.;
 const PILL_FONT_SIZE: f32 = 12.;
-// We use the word "Warp" in the Update Ready button to make it obvious that the terminal is Warp.
-// This can lead to free advertising when users screen-share Warp when an update is available.
-const UPDATE_READY_TEXT: &str = "Update Warp";
+const UPDATE_READY_TEXT: &str = "Update Nerminal";
 
 const TAB_BAR_OVERFLOW_MENU_WIDTH: f32 = 300.;
 
@@ -614,7 +612,7 @@ const AI_ASSISTANT_BUTTON_ID: &str = "workspace_view:ai_assistant_button";
 
 const VERSION_DEPRECATION_BANNER_TEXT: &str = "Your app is out of date and some features may not work as expected. Please update immediately.";
 
-const VERSION_DEPRECATION_WITHOUT_PERMISSIONS_BANNER_TEXT: &str = "Some Warp features may not work as expected without updating immediately, but Warp is unable to perform the update.";
+const VERSION_DEPRECATION_WITHOUT_PERMISSIONS_BANNER_TEXT: &str = "Some Nerminal features may not work as expected without updating immediately, but Nerminal is unable to perform the update.";
 
 const ASK_AI_ASSISTANT_KEYBINDING_NAME: &str = "workspace:toggle_ai_assistant";
 const TOGGLE_RESOURCE_CENTER_KEYBINDING_NAME: &str = "workspace:toggle_resource_center";
@@ -707,7 +705,7 @@ const MAX_WINDOW_TITLE_LENGTH: usize = 80;
 
 #[cfg(all(feature = "local_fs", not(target_family = "wasm")))]
 const AUTO_CLOUD_HANDOFF_PROMPT: &str =
-    "Continue this local Warp Agent task in the cloud from the current conversation state.";
+    "Continue this local agent task in the cloud from the current conversation state.";
 
 /// The default display name used for the user if they have no associated display name.
 pub const DEFAULT_USER_DISPLAY_NAME: &str = "User";
@@ -895,7 +893,7 @@ pub enum BannerSeverity {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum BannerButtonVariant {
     /// No fill, no border, just text (and optional icon). Used for the primary
-    /// action in the Figma design (e.g. "Fix with Warp Agent").
+    /// action in the Figma design (e.g. "Fix with the agent").
     Naked,
     /// Border-only, no fill (e.g. "Open file").
     Outlined,
@@ -1151,7 +1149,7 @@ pub struct Workspace {
     #[cfg(target_family = "wasm")]
     wasm_nux_dialog: ViewHandle<WasmNUXDialog>,
     #[cfg(target_family = "wasm")]
-    open_in_warp_button: ViewHandle<ActionButton>,
+    open_in_nerminal_button: ViewHandle<ActionButton>,
     #[cfg(target_family = "wasm")]
     view_cloud_runs_button: ViewHandle<ActionButton>,
     #[cfg(target_family = "wasm")]
@@ -3239,7 +3237,7 @@ impl Workspace {
         let wasm_nux_dialog = Self::build_wasm_nux_dialog(ctx);
 
         #[cfg(target_family = "wasm")]
-        let open_in_warp_button = Self::build_open_in_warp_button(ctx);
+        let open_in_nerminal_button = Self::build_open_in_nerminal_button(ctx);
 
         #[cfg(target_family = "wasm")]
         let transcript_info_button = Self::build_transcript_info_button(ctx);
@@ -3496,7 +3494,7 @@ impl Workspace {
             #[cfg(target_family = "wasm")]
             wasm_nux_dialog,
             #[cfg(target_family = "wasm")]
-            open_in_warp_button,
+            open_in_nerminal_button,
             #[cfg(target_family = "wasm")]
             transcript_info_button,
             #[cfg(target_family = "wasm")]
@@ -6289,7 +6287,7 @@ impl Workspace {
     fn handle_ai_fact_view_event(&mut self, event: &AIFactViewEvent, ctx: &mut ViewContext<Self>) {
         match event {
             AIFactViewEvent::OpenSettings => {
-                self.show_settings_with_section(Some(SettingsSection::WarpAgent), ctx);
+                self.show_settings_with_section(Some(SettingsSection::Features), ctx);
             }
             #[allow(unused_variables)]
             AIFactViewEvent::OpenFile(location) => {
@@ -8010,7 +8008,7 @@ impl Workspace {
     }
 
     /// The tab bar overflow menu is the context menu that appears when
-    /// a user clicks "Update Warp" in the top right of the tab bar.
+    /// a user clicks "Update Nerminal" in the top right of the tab bar.
     pub fn toggle_tab_bar_overflow_menu(&mut self, ctx: &mut ViewContext<Self>) {
         if self.show_tab_bar_overflow_menu {
             self.close_tab_bar_overflow_menu(ctx);
@@ -8040,7 +8038,7 @@ impl Workspace {
                         .into_item(),
                 ),
                 AutoupdateStage::UnableToUpdateToNewVersion { .. } => menu_items.push(
-                    MenuItemFields::new("Update Warp manually")
+                    MenuItemFields::new("Update Nerminal manually")
                         .with_on_select_action(WorkspaceAction::DownloadNewVersion)
                         .into_item(),
                 ),
@@ -9154,7 +9152,7 @@ impl Workspace {
     fn install_oz(&mut self, ctx: &mut ViewContext<Self>) {
         ctx.spawn(async { cli_install::install_oz() }, |view, result, ctx| {
             let command_name = ChannelState::channel().cli_command_name();
-            let message = format!("Installed the Oz CLI globally. You can now run '{command_name}' from any terminal outside of Warp.");
+            let message = format!("Installed the Oz CLI globally. You can now run '{command_name}' from any terminal outside of Nerminal.");
             let toast = DismissibleToast::success(message).with_link(
                 ToastLink::new("Learn more".to_string())
                     .with_href("https://docs.warp.dev/reference/cli".to_string()),
@@ -9170,7 +9168,7 @@ impl Workspace {
             async { cli_install::uninstall_oz() },
             |view, result, ctx| {
                 let toast = DismissibleToast::success(
-                    "Removed the global Oz CLI installation — it still works inside Warp."
+                    "Removed the global Oz CLI installation — it still works inside Nerminal."
                         .to_string(),
                 );
                 view.handle_cli_command_result(
@@ -9190,12 +9188,12 @@ impl Workspace {
             async { cli_install::install_warpctrl() },
             |view, result, ctx| {
                 let command_name = ChannelState::channel().warpctrl_command_name();
-                let message = format!("Installed the Warp Control CLI globally. You can now run '{command_name}' from any terminal outside of Warp.");
+                let message = format!("Installed the control CLI globally. You can now run '{command_name}' from any terminal outside of Nerminal.");
                 let toast = DismissibleToast::success(message);
                 view.handle_cli_command_result(
                     result,
                     toast,
-                    "Failed to install Warp Control command",
+                    "Failed to install the control command",
                     ctx,
                 );
             },
@@ -9209,13 +9207,13 @@ impl Workspace {
             async { cli_install::uninstall_warpctrl() },
             |view, result, ctx| {
                 let toast = DismissibleToast::success(
-                    "Removed the global Warp Control CLI installation — it still works inside Warp."
+                    "Removed the global control CLI installation — it still works inside Nerminal."
                         .to_string(),
                 );
                 view.handle_cli_command_result(
                     result,
                     toast,
-                    "Failed to uninstall Warp Control command",
+                    "Failed to uninstall the control command",
                     ctx,
                 );
             },
@@ -9803,7 +9801,7 @@ impl Workspace {
                     ) =>
                 {
                     items.push(
-                        MenuItemFields::new("Update and relaunch Warp")
+                        MenuItemFields::new("Update and relaunch Nerminal")
                             .with_on_select_action(WorkspaceAction::ApplyUpdate)
                             .with_override_text_color(appearance.theme().ansi_fg_red())
                             .into_item(),
@@ -9826,7 +9824,7 @@ impl Workspace {
                     ) =>
                 {
                     items.push(
-                        MenuItemFields::new("Update Warp manually")
+                        MenuItemFields::new("Update Nerminal manually")
                             .with_on_select_action(WorkspaceAction::DownloadNewVersion)
                             .with_override_text_color(appearance.theme().ansi_fg_red())
                             .into_item(),
@@ -9857,7 +9855,7 @@ impl Workspace {
 
         #[cfg(not(target_family = "wasm"))]
         items.push(
-            MenuItemFields::new("View Warp logs")
+            MenuItemFields::new("View Nerminal logs")
                 .with_on_select_action(WorkspaceAction::ViewLogs)
                 .into_item(),
         );
@@ -14368,7 +14366,7 @@ impl Workspace {
                         let url = NOTIFICATIONS_TROUBLESHOOT_URL.to_string();
                         view.toast_stack.update(ctx, |toast_stack, ctx| {
                             let toast = DismissibleToast::error(
-                                "Warp doesn't have permission to send desktop notifications."
+                                "Nerminal doesn't have permission to send desktop notifications."
                                     .to_string(),
                             )
                             .with_link(
@@ -15037,8 +15035,9 @@ impl Workspace {
                                 link = link.with_keystroke(keystroke);
                             }
 
-                            let toast = DismissibleToast::default(String::from("Warp updated!"))
-                                .with_link(link);
+                            let toast =
+                                DismissibleToast::default(String::from("Nerminal updated!"))
+                                    .with_link(link);
 
                             stack.add_ephemeral_toast(toast, ctx);
                         });
@@ -15924,7 +15923,7 @@ impl Workspace {
                 "Your conversation hasn't synced to the cloud yet. Try sending another message, then hand off again."
             }
             HandoffPrepareError::InvalidModel => {
-                "Custom models can't run in the cloud. Switch to a Warp model to hand off."
+                "Custom models can't run in the cloud. Switch to a hosted model to hand off."
             }
             HandoffPrepareError::EmptySourceAndPrompt => {
                 "Nothing to hand off — start a conversation first."
@@ -16256,7 +16255,7 @@ impl Workspace {
                         ctx,
                     ),
                     _ => {
-                        log::warn!("Attempted to open an unsupported Warp Drive link")
+                        log::warn!("Attempted to open an unsupported Drive link")
                     }
                 }
             }
@@ -17821,7 +17820,7 @@ impl Workspace {
     #[cfg(feature = "local_fs")]
     fn open_custom_router_file(&mut self, path: &Path, ctx: &mut ViewContext<Self>) {
         let settings = EditorSettings::as_ref(ctx);
-        let target = resolve_file_target_to_open_in_warp(path, settings, None);
+        let target = resolve_file_target_to_open_in_nerminal(path, settings, None);
         self.open_file_with_target(
             path.to_path_buf(),
             target,
@@ -18228,7 +18227,7 @@ impl Workspace {
                                         .contains_ai_document(&ai_doc_id, ctx)
                                 }) {
                                     new_toast = DismissibleToast::success(
-                                        "Plan synced to your Warp Drive".to_string(),
+                                        "Plan synced to your Drive".to_string(),
                                     )
                                     .with_object_id(object_id_clone)
                                     .with_link(
@@ -18974,7 +18973,7 @@ impl Workspace {
                 let command = code.trim().to_string();
                 let args_state =
                     ArgumentsState::for_command_workflow(&Default::default(), command.clone());
-                let workflow = Workflow::new("Command from Warp AI", command)
+                let workflow = Workflow::new("Command from the agent", command)
                     .with_arguments(args_state.arguments);
                 self.run_workflow_in_active_input(
                     &WorkflowType::AIGenerated {
@@ -19760,7 +19759,7 @@ impl Workspace {
         let body = appearance
             .ui_builder()
             .wrappable_text(
-                "Ask Warp AI to explain errors, suggest commands or write scripts.".to_owned(),
+                "Ask the agent to explain errors, suggest commands or write scripts.".to_owned(),
                 true,
             )
             .with_style(UiComponentStyles {
@@ -20436,7 +20435,7 @@ impl Workspace {
                     {
                         ToolPanelView::ProjectExplorer => "Project explorer",
                         ToolPanelView::GlobalSearch { .. } => "Global search",
-                        ToolPanelView::WarpDrive => "Warp Drive",
+                        ToolPanelView::WarpDrive => "Drive",
                         ToolPanelView::ConversationListView => "Agent conversations",
                     }
                 } else {
@@ -20490,7 +20489,7 @@ impl Workspace {
             {
                 ToolPanelView::ProjectExplorer => "Project explorer",
                 ToolPanelView::GlobalSearch { .. } => "Global search",
-                ToolPanelView::WarpDrive => "Warp Drive",
+                ToolPanelView::WarpDrive => "Drive",
                 ToolPanelView::ConversationListView => "Agent conversations",
             }
         } else {
@@ -20828,7 +20827,7 @@ impl Workspace {
             .finish();
             tab_bar.add_child(warp_logo);
 
-            // Right: Info button + "View all cloud runs" button (for ambient agent sessions) + "Open in Warp" button
+            // Right: Info button + "View all cloud runs" button (for ambient agent sessions) + "Open in Nerminal" button
             let mut right_row = Flex::row()
                 .with_cross_axis_alignment(CrossAxisAlignment::Center)
                 .with_main_axis_size(MainAxisSize::Min);
@@ -20868,9 +20867,9 @@ impl Workspace {
                 }
             }
 
-            // Hide "Open in Warp" button on mobile devices
+            // Hide "Open in Nerminal" button on mobile devices
             if !warpui::platform::wasm::is_mobile_device() {
-                right_row.add_child(ChildView::new(&self.open_in_warp_button).finish());
+                right_row.add_child(ChildView::new(&self.open_in_nerminal_button).finish());
             }
             tab_bar.add_child(right_row.finish());
 
@@ -21703,7 +21702,7 @@ impl Workspace {
                 icons::Icon::Lightbulb,
                 &self.mouse_states.resource_center_icon,
                 WorkspaceAction::ToggleResourceCenter,
-                "Warp Essentials".to_string(),
+                "Essentials".to_string(),
                 self.cached_keybindings[TOGGLE_RESOURCE_CENTER_KEYBINDING_NAME].clone(),
                 false,
                 false,
@@ -22201,7 +22200,7 @@ impl Workspace {
             AISettings::as_ref(app)
                 .is_any_ai_enabled(app)
                 .then(|| WorkspaceBannerButtonDetails {
-                    text: "Fix with Warp Agent".to_owned(),
+                    text: "Fix with the agent".to_owned(),
                     action: WorkspaceAction::FixSettingsWithOz {
                         error_description: error.to_string(),
                     },
@@ -22261,13 +22260,14 @@ impl Workspace {
                 AutoupdateStage::UnableToUpdateToNewVersion { new_version }
                     if !self.autoupdate_unable_to_update_banner_dismissed =>
                 {
-                    let description =
-                        if is_incoming_version_past_current(new_version.soft_cutoff.as_deref()) {
-                            VERSION_DEPRECATION_WITHOUT_PERMISSIONS_BANNER_TEXT.to_owned()
-                        } else {
-                            "A new version is available but Warp is unable to perform the update."
-                                .to_owned()
-                        };
+                    let description = if is_incoming_version_past_current(
+                        new_version.soft_cutoff.as_deref(),
+                    ) {
+                        VERSION_DEPRECATION_WITHOUT_PERMISSIONS_BANNER_TEXT.to_owned()
+                    } else {
+                        "A new version is available but Nerminal is unable to perform the update."
+                            .to_owned()
+                    };
 
                     Some(WorkspaceBannerFields {
                         banner_type: WorkspaceBanner::UnableToUpdateToNewVersion,
@@ -22276,7 +22276,7 @@ impl Workspace {
                         description,
                         secondary_button: None,
                         button: Some(WorkspaceBannerButtonDetails {
-                            text: "Update Warp manually".to_string(),
+                            text: "Update Nerminal manually".to_string(),
                             action: WorkspaceAction::DownloadNewVersion,
                             variant: BannerButtonVariant::Outlined,
                             icon: None,
@@ -22291,7 +22291,7 @@ impl Workspace {
                         if is_incoming_version_past_current(new_version.soft_cutoff.as_deref()) {
                             VERSION_DEPRECATION_WITHOUT_PERMISSIONS_BANNER_TEXT.to_owned()
                         } else {
-                            "Warp was unable to launch the new installed version.".to_owned()
+                            "Nerminal was unable to launch the new installed version.".to_owned()
                         };
 
                     Some(WorkspaceBannerFields {
@@ -22301,7 +22301,7 @@ impl Workspace {
                         description,
                         secondary_button: None,
                         button: Some(WorkspaceBannerButtonDetails {
-                            text: "Update Warp manually".to_string(),
+                            text: "Update Nerminal manually".to_string(),
                             action: WorkspaceAction::DownloadNewVersion,
                             variant: BannerButtonVariant::Outlined,
                             icon: None,
@@ -23837,7 +23837,7 @@ impl Workspace {
             // Many users' browser settings will block Local Network Access so this will end up redirecting to download page,
             // even if they have the app installed.
             let toast_message = format!(
-                "Have Warp installed but redirecting to download page?\nEnable Local Network Access for {} in your browser.",
+                "Have Nerminal installed but redirecting to download page?\nEnable Local Network Access for {} in your browser.",
                 ChannelState::server_root_url()
             );
             self.toast_stack.update(ctx, |toast_stack, ctx| {
@@ -25934,14 +25934,14 @@ impl TypedActionView for Workspace {
                         .set_value(false, ctx)
                     {
                         log::warn!(
-                            "Failed to reset Warp Agent CLI launch modal dismissed setting: {e}"
+                            "Failed to reset the agent CLI launch modal dismissed setting: {e}"
                         );
                     }
                 });
                 let new_value =
                     *AISettings::as_ref(ctx).did_check_to_trigger_agent_cli_launch_modal;
                 log::info!(
-                    "Warp Agent CLI launch modal state: old={old_value}, new={new_value}, feature_flag_enabled={}",
+                    "Agent CLI launch modal state: old={old_value}, new={new_value}, feature_flag_enabled={}",
                     FeatureFlag::AgentCliLaunchModal.is_enabled()
                 );
             }
