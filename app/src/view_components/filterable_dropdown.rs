@@ -231,11 +231,6 @@ where
         self.orientation = orientation;
     }
 
-    pub fn add_items(&mut self, items: Vec<DropdownItem<A>>, ctx: &mut ViewContext<Self>) {
-        self.items.extend(items.iter().map(|item| item.into()));
-        self.set_filtered_items(ctx);
-    }
-
     pub fn set_items(&mut self, items: Vec<DropdownItem<A>>, ctx: &mut ViewContext<Self>) {
         self.items = items.iter().map(|item| item.into()).collect();
         self.set_filtered_items(ctx);
@@ -307,16 +302,6 @@ where
         {
             self.selected_item = selected_item_in_dropdown;
         }
-        ctx.notify();
-    }
-
-    /// Select the item at the given index. If the index is out of bounds, this clears the selection.
-    pub fn set_selected_by_index(&mut self, selected_index: usize, ctx: &mut ViewContext<Self>) {
-        self.dropdown.update(ctx, |dropdown, ctx| {
-            dropdown.set_selected_by_index(selected_index, ctx);
-            ctx.notify();
-        });
-        self.selected_item = self.selected_item_in_dropdown(ctx);
         ctx.notify();
     }
 
@@ -766,32 +751,8 @@ where
         self.dropdown.as_ref(ctx).items_len()
     }
 
-    pub fn clear_filter(&mut self, ctx: &mut ViewContext<Self>) {
-        self.filter_editor.update(ctx, |editor, ctx| {
-            editor.clear_buffer(ctx);
-            ctx.notify();
-        });
-    }
-
     pub fn set_menu_header_to_static(&mut self, header: &'static str) {
         self.static_menu_header = Some(header);
-    }
-
-    /// Test-only: drive the filter input with `query` and re-filter the list,
-    /// mirroring what happens when a user types into the search field.
-    #[cfg(test)]
-    pub(crate) fn set_filter_query_for_test(&mut self, query: &str, ctx: &mut ViewContext<Self>) {
-        self.filter_editor.update(ctx, |editor, ctx| {
-            editor.select_all(ctx);
-            editor.insert_selected_text(query, ctx);
-        });
-        self.set_filtered_items(ctx);
-    }
-
-    /// Test-only: the number of items currently visible after filtering.
-    #[cfg(test)]
-    pub(crate) fn visible_items_len_for_test(&self, ctx: &AppContext) -> usize {
-        self.dropdown_items_len(ctx)
     }
 }
 

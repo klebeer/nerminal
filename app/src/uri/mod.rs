@@ -35,9 +35,7 @@ use crate::root_view::{
 };
 use crate::server::ids::ServerId;
 use crate::server::telemetry::{LaunchConfigUiLocation, TelemetryEvent};
-use crate::settings_view::{
-    OpenTeamsSettingsModalArgs, SettingsSection, settings_widget_deeplink_target,
-};
+use crate::settings_view::{SettingsSection, settings_widget_deeplink_target};
 use crate::tab_configs::TabConfig;
 use crate::user_config::{load_launch_configs, load_tab_configs, tab_configs_dir};
 use crate::util::openable_file_type::{
@@ -393,14 +391,7 @@ impl UriHost {
                 match settings_sub_page.as_deref() {
                     Some("teams") => {
                         let invite_email = query_string.get("invite").map(|s| s.to_string());
-                        let args = OpenTeamsSettingsModalArgs { invite_email };
-                        dispatch_action_in_new_or_existing_window(
-                            primary_window_id,
-                            "root_view:open_team_settings_with_email_invite_in_existing_window",
-                            "root_view:open_team_settings_with_email_invite_in_new_window",
-                            &args,
-                            ctx,
-                        );
+                        let _ = invite_email;
                     }
                     Some("environments") => {
                         // Notify that GitHub auth completed so views can refresh
@@ -1674,13 +1665,10 @@ fn dispatch_action_in_new_or_existing_window<T: 'static>(
     }
 }
 
-fn settings_section_for_simple_subpage(subpage: &str) -> Option<SettingsSection> {
-    match subpage {
-        "billing_and_usage" => Some(SettingsSection::BillingAndUsage),
-        "platform" => Some(SettingsSection::OzCloudAPIKeys),
-        "appearance" => Some(SettingsSection::Appearance),
-        _ => None,
-    }
+/// No subpage is linkable in this build: every page the deeplinks named was
+/// removed, and the sidebar has only the pages a settings file cannot replace.
+fn settings_section_for_simple_subpage(_subpage: &str) -> Option<SettingsSection> {
+    None
 }
 
 /// Validates an incoming custom URI for security and returns the host.

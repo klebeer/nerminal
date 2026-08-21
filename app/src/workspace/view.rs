@@ -3316,7 +3316,6 @@ impl Workspace {
                     ctx.notify();
                 }
                 SharedObjectsCreationDeniedModalEvent::TeamSettings => {
-                    me.show_settings_with_section(Some(SettingsSection::Teams), ctx);
                     me.current_workspace_state
                         .is_shared_objects_creation_denied_modal_open = false;
                     ctx.notify();
@@ -6286,9 +6285,7 @@ impl Workspace {
 
     fn handle_ai_fact_view_event(&mut self, event: &AIFactViewEvent, ctx: &mut ViewContext<Self>) {
         match event {
-            AIFactViewEvent::OpenSettings => {
-                self.show_settings_with_section(Some(SettingsSection::Features), ctx);
-            }
+            AIFactViewEvent::OpenSettings => {}
             #[allow(unused_variables)]
             AIFactViewEvent::OpenFile(location) => {
                 #[cfg(feature = "local_fs")]
@@ -8624,17 +8621,6 @@ impl Workspace {
             return;
         }
 
-        let ps1_grid_info = self.active_session_ps1_grid_info(ctx);
-        // Open new tab and update current page
-        self.settings_pane.update(ctx, move |settings_pane, ctx| {
-            // TODO: This check shouldn't be necessary, but `active_session_ps1_grid_info` returns
-            // None when the active tab has no running terminal sessions, e.g. if it contains only
-            // notebooks/workflow panes.
-            if ps1_grid_info.is_some() {
-                settings_pane.set_ps1_info(ps1_grid_info, ctx);
-            }
-        });
-
         let panes_layout = PanesLayout::Snapshot(Box::new(PaneNodeSnapshot::Leaf(LeafSnapshot {
             is_focused: true,
             custom_vertical_tabs_title: None,
@@ -9881,15 +9867,7 @@ impl Workspace {
             .map(|workspace| workspace.billing_metadata.is_user_on_paid_plan())
             .unwrap_or(false);
 
-        if is_on_paid_plan {
-            items.push(
-                MenuItemFields::new("Billing and usage")
-                    .with_on_select_action(WorkspaceAction::ShowSettingsPage(
-                        SettingsSection::BillingAndUsage,
-                    ))
-                    .into_item(),
-            );
-        } else {
+        if !is_on_paid_plan {
             items.push(
                 MenuItemFields::new("Upgrade")
                     .with_on_select_action(WorkspaceAction::ShowUpgrade)
@@ -17580,9 +17558,7 @@ impl Workspace {
                     ctx,
                 );
             }
-            DrivePanelEvent::OpenTeamSettingsPage => {
-                self.show_settings_with_section(Some(SettingsSection::Teams), ctx);
-            }
+            DrivePanelEvent::OpenTeamSettingsPage => {}
             DrivePanelEvent::OpenImportModal {
                 owner,
                 initial_folder_id,
@@ -18629,14 +18605,10 @@ impl Workspace {
     /// settings with the intent of inviting a user.
     pub fn show_team_settings_page_with_email_invite(
         &mut self,
-        email_invite: Option<&String>,
+        _email_invite: Option<&String>,
         ctx: &mut ViewContext<Self>,
     ) {
-        self.show_settings_with_section(Some(SettingsSection::Teams), ctx);
-
-        self.settings_pane.update(ctx, |view, ctx| {
-            view.open_teams_page_email_invite(email_invite, ctx);
-        });
+        self.settings_pane.update(ctx, |_view, _ctx| {});
     }
 
     /// Opens the MCP servers settings page, optionally triggering auto-install of a gallery MCP.
@@ -19480,10 +19452,7 @@ impl Workspace {
     ) {
         // Try to get a prompt preview from an active session. Otherwise, read it from the settings
         // view.
-        let ps1_grid_info = self.active_session_ps1_grid_info(ctx).or_else(|| {
-            self.settings_pane
-                .read(ctx, |settings, app| settings.get_ps1_info(app))
-        });
+        let ps1_grid_info = self.active_session_ps1_grid_info(ctx);
         let chip_runtime_capabilities = self
             .active_tab_pane_group()
             .as_ref(ctx)
@@ -24431,9 +24400,7 @@ impl TypedActionView for Workspace {
 
                 ctx.open_url(&upgrade_url);
             }
-            ShowReferralSettingsPage => {
-                self.show_settings_with_section(Some(SettingsSection::Referrals), ctx);
-            }
+            ShowReferralSettingsPage => {}
             JoinSlack => self.join_slack(ctx),
             ViewUserDocs => self.view_user_docs(ctx),
             ViewLatestChangelog => self.view_latest_changelog(ctx),

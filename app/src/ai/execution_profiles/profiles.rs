@@ -834,6 +834,7 @@ impl AIExecutionProfilesModel {
         }
     }
 
+    #[cfg(any(test, feature = "integration_tests"))]
     pub fn create_profile(&mut self, ctx: &mut ModelContext<Self>) -> Option<ExecutionProfileId> {
         let profile_id = ExecutionProfileId::new();
         if self.settings_migration_state == SettingsMigrationState::PendingLegacyImport {

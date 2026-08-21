@@ -7,14 +7,15 @@ use pathfinder_color::ColorU;
 use pathfinder_geometry::vector::vec2f;
 use warp_core::ui::Icon;
 use warp_core::ui::appearance::Appearance;
+use warp_core::ui::theme::Fill;
 use warp_graphql::billing::AddonCreditsOption;
 use warp_graphql::error::BudgetExceededError;
 use warpui::elements::{
     Align, Border, ChildAnchor, ChildView, ConstrainedBox, Container, CornerRadius,
-    CrossAxisAlignment, DropShadow, Expanded, Flex, FormattedTextElement, HighlightedHyperlink,
-    Hoverable, Icon as WarpUiIcon, MainAxisAlignment, MainAxisSize, MouseStateHandle,
-    OffsetPositioning, ParentAnchor, ParentElement as _, ParentOffsetBounds, Radius, Shrinkable,
-    SizeConstraintCondition, SizeConstraintSwitch, Stack, Text,
+    CrossAxisAlignment, DropShadow, Empty, Expanded, Flex, FormattedTextElement,
+    HighlightedHyperlink, Hoverable, Icon as WarpUiIcon, MainAxisAlignment, MainAxisSize,
+    MouseStateHandle, OffsetPositioning, ParentAnchor, ParentElement as _, ParentOffsetBounds,
+    Radius, Shrinkable, SizeConstraintCondition, SizeConstraintSwitch, Stack, Text,
 };
 use warpui::fonts::Weight;
 use warpui::ui_components::button::ButtonVariant;
@@ -34,7 +35,6 @@ use crate::pricing::{PricingInfoModel, PricingInfoModelEvent};
 use crate::send_telemetry_from_ctx;
 use crate::server::ids::ServerId;
 use crate::server::telemetry::{OutOfCreditsBannerAction, TelemetryEvent};
-use crate::settings_view::create_discount_badge;
 use crate::view_components::{Dropdown, DropdownAction};
 use crate::workspaces::user_workspaces::{UserWorkspaces, UserWorkspacesEvent};
 
@@ -1065,4 +1065,23 @@ impl warpui::TypedActionView for BuyCreditsBanner {
             }
         }
     }
+}
+
+pub fn create_discount_badge(discount: u32, appearance: &Appearance) -> Box<dyn Element> {
+    if discount == 0 {
+        return Empty::new().finish();
+    }
+
+    let theme = appearance.theme();
+    let bg_color: Fill = theme.terminal_colors().normal.green.into();
+
+    Container::new(
+        Text::new_inline(format!("{discount}% off"), appearance.ui_font_family(), 10.)
+            .with_color(theme.main_text_color(bg_color).into())
+            .finish(),
+    )
+    .with_corner_radius(CornerRadius::with_all(Radius::Pixels(4.)))
+    .with_background(bg_color)
+    .with_uniform_padding(4.)
+    .finish()
 }

@@ -24,11 +24,6 @@ impl GPUState {
             ctx.emit(GPUStateEvent::LowPowerGPUAvailable);
         }
     }
-
-    /// Returns whether the low power GPU is available for use
-    pub fn is_low_power_gpu_available(&self) -> bool {
-        self.has_low_power_gpu
-    }
 }
 
 pub enum GPUStateEvent {

@@ -7,7 +7,6 @@ use warpui::ui_components::button::ButtonVariant;
 use warpui::ui_components::components::{Coords, UiComponent, UiComponentStyles};
 use warpui::{AppContext, Element, Entity, SingletonEntity, View, ViewContext};
 
-use crate::settings_view::SettingsSection;
 use crate::terminal::view::TerminalAction;
 use crate::ui_components::buttons::icon_button;
 use crate::ui_components::icons::Icon;
@@ -136,9 +135,6 @@ impl View for TelemetryBanner {
                         })
                         .build()
                         .on_click(|ctx, _, _| {
-                            ctx.dispatch_typed_action(WorkspaceAction::ShowSettingsPage(
-                                SettingsSection::Privacy,
-                            ));
                             ctx.dispatch_typed_action(
                                 TerminalAction::HideTelemetryBannerPermanently,
                             );

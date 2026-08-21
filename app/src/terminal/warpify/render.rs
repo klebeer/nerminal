@@ -31,8 +31,8 @@ const WARP_DRIVE_ENV_VAR_COLLECTION_ICON_COLOR: u32 = 0xC464FFFF;
 const ICON_MARGIN: f32 = 4.;
 const TERMINAL_ICON: &str = "bundled/svg/terminal.svg";
 pub const HORIZONTAL_TEXT_MARGIN: f32 = 20.;
-pub const SSH_DOCS_URL: &str = "https://docs.warp.dev/terminal/warpify/ssh";
-pub const SUBSHELL_DOCS_URL: &str = "https://docs.warp.dev/terminal/warpify/subshells";
+pub const SSH_DOCS_URL: &str = "https://github.com/klebeer/nerminal";
+pub const SUBSHELL_DOCS_URL: &str = "https://github.com/klebeer/nerminal";
 
 /// Errored blocks have a red stripe, and subshells have a gray one.
 pub const LEFT_STRIPE_WIDTH: f32 = 5.;
@@ -181,7 +181,7 @@ pub fn render_never_warpify_ssh_link(
     let link = appearance
         .ui_builder()
         .link(
-            "Never Warpify this host".into(),
+            "Never integrate this host".into(),
             None,
             Some(Box::new({
                 let ssh_host = ssh_host.clone();

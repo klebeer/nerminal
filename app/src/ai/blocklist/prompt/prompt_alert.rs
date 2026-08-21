@@ -16,7 +16,6 @@ use crate::ai::credit_availability::{AICreditAvailability, AICreditDenialReason}
 use crate::auth::AuthStateProvider;
 use crate::network::NetworkStatus;
 use crate::server::ids::ServerId;
-use crate::settings_view::SettingsSection;
 use crate::ui_components::icons::Icon;
 use crate::workspace::WorkspaceAction;
 use crate::workspaces::user_workspaces::UserWorkspaces;
@@ -448,13 +447,7 @@ impl View for PromptAlertView {
                     | PromptAlertState::MonthlyOveragesSpendLimitReached
             );
 
-        if suggest_buy_credits {
-            text_fragments.push(FormattedTextFragment::plain_text("  "));
-            text_fragments.push(FormattedTextFragment::hyperlink_action(
-                "Add credits",
-                WorkspaceAction::ShowSettingsPage(SettingsSection::BillingAndUsage),
-            ));
-        } else {
+        if !suggest_buy_credits {
             self.action_hyperlink(&state, &mut text_fragments, app);
         }
 

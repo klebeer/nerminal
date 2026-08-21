@@ -47,7 +47,6 @@ use crate::server::telemetry::TelemetryEvent;
 use crate::settings::{
     AISettings, EnforceMinimumContrast, FontSettings, FontSettingsChangedEvent, PrivacySettings,
 };
-use crate::settings_view::SettingsSection;
 use crate::terminal::TerminalModel;
 use crate::terminal::grid_renderer::{self};
 use crate::terminal::ligature_settings::{LigatureSettings, should_use_ligature_rendering};
@@ -58,7 +57,6 @@ use crate::themes::theme::WarpTheme;
 use crate::ui_components::icons::Icon;
 use crate::util::bindings::CustomAction;
 use crate::view_components::ToastFlavor;
-use crate::workspace::WorkspaceAction;
 use crate::workspaces::user_workspaces::UserWorkspaces;
 
 const PADDING: f32 = 30.;
@@ -779,9 +777,6 @@ impl ShareBlockModal {
             .build()
             .on_click(|ctx, _, _| {
                 ctx.dispatch_typed_action(ShareBlockModalAction::Close);
-                ctx.dispatch_typed_action(WorkspaceAction::ShowSettingsPage(
-                    SettingsSection::SharedBlocks,
-                ));
             });
         if matches!(self.request_state, ShareRequestState::Pending(_)) {
             button = button.disable();

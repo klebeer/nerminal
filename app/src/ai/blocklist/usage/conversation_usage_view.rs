@@ -34,12 +34,6 @@ use crate::persistence::model::{
 };
 use crate::ui_components::blended_colors;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DisplayMode {
-    Settings,
-    Footer,
-}
-
 pub struct ConversationUsageInfo {
     pub credits_spent: f32,
     pub platform_credits_spent: f32,
@@ -92,7 +86,6 @@ pub enum ConversationUsageViewAction {
 pub struct ConversationUsageView {
     pub usage_info: ConversationUsageInfo,
     /// The display mode for this view.
-    pub display_mode: DisplayMode,
     /// Optional timing information for the last set of responses (only shown in the footer version of this view).
     pub timing_info: Option<TimingInfo>,
     full_terminal_use_tooltip_mouse_state: MouseStateHandle,
@@ -126,15 +119,14 @@ pub struct ConversationUsageView {
 }
 
 impl ConversationUsageView {
+    #[cfg(test)]
     pub fn new(
         usage_info: ConversationUsageInfo,
-        display_mode: DisplayMode,
         timing_info: Option<TimingInfo>,
         full_terminal_use_tooltip_mouse_state: MouseStateHandle,
     ) -> Self {
         Self {
             usage_info,
-            display_mode,
             timing_info,
             full_terminal_use_tooltip_mouse_state,
             parent_conversation_id: None,
@@ -208,7 +200,6 @@ impl ConversationUsageView {
 
         Self {
             usage_info,
-            display_mode: DisplayMode::Footer,
             timing_info,
             full_terminal_use_tooltip_mouse_state,
             parent_conversation_id: Some(parent_conversation_id),
@@ -229,9 +220,6 @@ impl ConversationUsageView {
     /// and conversations without descendants short-circuit before any
     /// rollup-specific UI is built, so no feature flag is needed.
     fn rollup(&self, app: &AppContext) -> Option<OrchestrationCreditRollup> {
-        if self.display_mode != DisplayMode::Footer {
-            return None;
-        }
         let parent_id = self.parent_conversation_id?;
         let history = BlocklistAIHistoryModel::as_ref(app);
         compute_orchestration_rollup(parent_id, history)
@@ -331,9 +319,7 @@ impl ConversationUsageView {
             .map(|r| r.total_credits)
             .unwrap_or(self.usage_info.credits_spent + self.usage_info.platform_credits_spent);
 
-        if self.display_mode == DisplayMode::Footer
-            && self.usage_info.credits_spent_for_last_block.is_some()
-        {
+        if self.usage_info.credits_spent_for_last_block.is_some() {
             let last_block_credits = self.usage_info.credits_spent_for_last_block.unwrap();
             labels.push(render_label_text(
                 "Credits spent (last response)",
@@ -583,8 +569,7 @@ impl ConversationUsageView {
         ));
 
         // Last response time
-        if self.display_mode == DisplayMode::Footer
-            && let Some(timing) = &self.timing_info
+        if let Some(timing) = &self.timing_info
             && (timing.time_to_first_token_ms != 0
                 || timing.total_agent_response_time_ms != 0
                 || timing.wall_to_wall_response_time_ms.is_some())
@@ -888,29 +873,22 @@ impl ConversationUsageView {
         let theme = appearance.theme();
         let mut card_container = Container::new(content).with_background(theme.surface_2());
 
-        if let DisplayMode::Footer = self.display_mode {
-            card_container = card_container
-                .with_corner_radius(CornerRadius::with_all(Radius::Pixels(8.)))
-                .with_border(Border::all(1.0).with_border_fill(theme.outline()))
-                .with_uniform_margin(16.);
-        } else {
-            card_container =
-                card_container.with_corner_radius(CornerRadius::with_bottom(Radius::Pixels(6.)));
-        }
+        card_container = card_container
+            .with_corner_radius(CornerRadius::with_all(Radius::Pixels(8.)))
+            .with_border(Border::all(1.0).with_border_fill(theme.outline()))
+            .with_uniform_margin(16.);
 
         let mut res = Flex::column()
             .with_main_axis_size(MainAxisSize::Min)
             .with_cross_axis_alignment(CrossAxisAlignment::Stretch);
 
-        if let DisplayMode::Footer = self.display_mode {
-            res = res.with_child(
-                // Top divider
-                Container::new(Empty::new().finish())
-                    .with_border(Border::top(2.0).with_border_fill(theme.outline()))
-                    .with_overdraw_bottom(0.)
-                    .finish(),
-            );
-        }
+        res = res.with_child(
+            // Top divider
+            Container::new(Empty::new().finish())
+                .with_border(Border::top(2.0).with_border_fill(theme.outline()))
+                .with_overdraw_bottom(0.)
+                .finish(),
+        );
 
         res.with_child(card_container.finish()).finish()
     }

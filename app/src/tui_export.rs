@@ -278,11 +278,11 @@ pub use crate::workspaces::user_workspaces::{UserWorkspaces, UserWorkspacesEvent
 pub use crate::workspaces::workspace::{AiCreditsUsageAndCostType, UsageVisibilityGranularity};
 
 pub fn format_usage_cost_cents(cents: i64) -> String {
-    crate::settings_view::format_cost_cents(cents)
+    crate::util::number_format::format_cost_cents(cents)
 }
 
 pub fn format_usage_credits(credits: i64) -> String {
-    crate::settings_view::format_credits(credits)
+    crate::util::number_format::format_credits(credits)
 }
 
 /// Builds the live-shell completion context used to parse TUI input for NLD.

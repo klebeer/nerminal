@@ -3,8 +3,8 @@ use warp_core::features::FeatureFlag;
 use warpui::ViewContext;
 
 use super::{
-    ContentItem, ContentSectionData, FeatureItem, FeatureSection, FeatureSectionData,
-    ResourceCenterMainView, Section, Tip, TipAction, TipHint,
+    FeatureItem, FeatureSection, FeatureSectionData, ResourceCenterMainView, Section, Tip,
+    TipAction, TipHint,
 };
 
 pub fn sections(ctx: &mut ViewContext<ResourceCenterMainView>) -> Vec<Section> {
@@ -57,31 +57,6 @@ pub fn sections(ctx: &mut ViewContext<ResourceCenterMainView>) -> Vec<Section> {
     };
     sections.push(Section::Feature(maximize_warp));
 
-    let advanced_setup = ContentSectionData {
-        section_name: FeatureSection::AdvancedSetup,
-        items: vec![
-            ContentItem {
-                title: "Use your custom prompt",
-                description: "Set up Warp to honor your PS1 setting",
-                url: "https://docs.warp.dev/terminal/appearance/prompt",
-                button_label: "View documentation",
-            },
-            ContentItem {
-                title: "Integrate Warp with your IDE",
-                description: "Configure Warp to launch from your most used development tools",
-                url: "https://docs.warp.dev/terminal/integrations-and-plugins",
-                button_label: "View documentation",
-            },
-            ContentItem {
-                title: "How Warp uses Warp",
-                description: "Learn how Warp's engineering team uses their favorite features",
-                url: "https://www.warp.dev/blog/how-warp-uses-warp",
-                button_label: "Read article",
-            },
-        ],
-    };
-    sections.push(Section::Content(advanced_setup));
-
     sections
 }
 
@@ -92,13 +67,6 @@ fn maximize_warp_items(ctx: &mut ViewContext<ResourceCenterMainView>) -> Vec<Fea
         "Command search",
         "Find and run previously executed commands, workflows, and more.",
         Tip::Action(TipAction::CommandSearch),
-        ctx,
-    ));
-
-    maximize_warp_items.push(FeatureItem::new(
-        "AI command search",
-        "Generate shell commands with natural language.",
-        Tip::Action(TipAction::AiCommandSearch),
         ctx,
     ));
 

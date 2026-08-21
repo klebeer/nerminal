@@ -3829,9 +3829,7 @@ impl Input {
 
         let buy_credits_banner = ctx.add_typed_action_view(BuyCreditsBanner::new);
         ctx.subscribe_to_view(&buy_credits_banner, |me, _, event, ctx| match event {
-            BuyCreditsBannerEvent::OpenBillingAndUsage => {
-                ctx.emit(Event::OpenSettings(SettingsSection::BillingAndUsage));
-            }
+            BuyCreditsBannerEvent::OpenBillingAndUsage => {}
             BuyCreditsBannerEvent::RefocusInput => {
                 ctx.focus(&me.editor);
             }
@@ -5237,9 +5235,7 @@ impl Input {
                     llm_prefs.remove_llm_override(self.terminal_view_id, ctx);
                 });
             }
-            InlineProfileSelectorEvent::ManageProfiles => {
-                ctx.emit(Event::OpenSettings(SettingsSection::AgentProfiles));
-            }
+            InlineProfileSelectorEvent::ManageProfiles => {}
             InlineProfileSelectorEvent::Dismissed => {
                 if self
                     .suggestions_mode_model
@@ -6761,9 +6757,7 @@ impl Input {
                     entrypoint: AnonymousUserSignupEntrypoint::SignUpAIPrompt,
                 });
             }
-            PromptAlertEvent::OpenBillingAndUsagePage => {
-                ctx.emit(Event::OpenSettings(SettingsSection::BillingAndUsage));
-            }
+            PromptAlertEvent::OpenBillingAndUsagePage => {}
             PromptAlertEvent::OpenBillingPortal { team_uid } => {
                 UserWorkspaces::handle(ctx).update(ctx, |user_workspaces, ctx| {
                     user_workspaces.generate_stripe_billing_portal_link(*team_uid, ctx);
@@ -16013,9 +16007,7 @@ impl Input {
             PromptSuggestionsEvent::SignupAnonymousUser => ctx.emit(Event::SignupAnonymousUser {
                 entrypoint: AnonymousUserSignupEntrypoint::SignUpAIPrompt,
             }),
-            PromptSuggestionsEvent::OpenBillingAndUsagePage => {
-                ctx.emit(Event::OpenSettings(SettingsSection::BillingAndUsage))
-            }
+            PromptSuggestionsEvent::OpenBillingAndUsagePage => {}
             PromptSuggestionsEvent::OpenBillingPortal { team_uid } => {
                 UserWorkspaces::handle(ctx).update(ctx, |user_workspaces, ctx| {
                     user_workspaces.generate_stripe_billing_portal_link(*team_uid, ctx);

@@ -4,7 +4,6 @@ use warp_core::features::FeatureFlag;
 use warp_core::ui::appearance::Appearance;
 use warp_core::ui::builder::UiBuilder;
 use warp_core::ui::color::{darken, lighten};
-use warp_core::ui::theme::ColorScheme;
 use warpui::assets::asset_cache::AssetSource;
 use warpui::elements::{
     Border, CacheOption, ConstrainedBox, Container, CornerRadius, CrossAxisAlignment, Fill, Flex,
@@ -118,11 +117,9 @@ where
 }
 
 pub fn render_square_logo(appearance: &Appearance) -> Box<dyn Element> {
-    let image_path = if appearance.theme().inferred_color_scheme() == ColorScheme::LightOnDark {
-        "bundled/svg/nerminal.svg"
-    } else {
-        "bundled/svg/nerminal.svg"
-    };
+    // One glyph for both schemes: it paints with `currentColor` and takes the
+    // theme's tint, so there is no light and dark pair to choose between.
+    let image_path = "bundled/svg/nerminal.svg";
 
     ConstrainedBox::new(
         Container::new(

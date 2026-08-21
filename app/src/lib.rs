@@ -1936,9 +1936,7 @@ pub(crate) fn initialize_app(
             for window_id in ctx.window_ids().collect_vec() {
                 SettingsPaneManager::handle(ctx)
                     .read(ctx, |model, _| model.settings_view(window_id))
-                    .update(ctx, |settings, ctx| {
-                        settings.refresh_preferred_graphics_backend_dropdown(ctx);
-                    })
+                    .update(ctx, |_settings, _ctx| {})
             }
 
             send_telemetry_from_app_ctx!(event, ctx);

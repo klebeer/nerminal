@@ -735,35 +735,21 @@ fn test_parse_tab_path_bare_tilde() {
 
 #[test]
 fn test_settings_widget_deeplink_target() {
-    assert_eq!(
-        settings_widget_deeplink_target("global_hotkey").map(|(section, _)| section),
-        Some(SettingsSection::Features),
-    );
+    // The allowlist is empty in this build: every widget it pointed at lived on
+    // a settings page that is gone.
+    assert!(settings_widget_deeplink_target("global_hotkey").is_none());
     assert!(settings_widget_deeplink_target("custom_router").is_none());
     #[cfg(not(target_family = "wasm"))]
-    assert_eq!(
-        settings_widget_deeplink_target("cli_agents").map(|(section, _)| section),
-        Some(SettingsSection::ThirdPartyCLIAgents),
-    );
-    // Unknown / empty slugs are not linkable (allowlist only).
+    assert!(settings_widget_deeplink_target("cli_agents").is_none());
     assert!(settings_widget_deeplink_target("not_a_widget").is_none());
     assert!(settings_widget_deeplink_target("").is_none());
 }
 
 #[test]
 fn test_settings_section_for_simple_subpage() {
-    assert_eq!(
-        settings_section_for_simple_subpage("appearance"),
-        Some(SettingsSection::Appearance),
-    );
-    assert_eq!(
-        settings_section_for_simple_subpage("billing_and_usage"),
-        Some(SettingsSection::BillingAndUsage),
-    );
-    assert_eq!(
-        settings_section_for_simple_subpage("platform"),
-        Some(SettingsSection::OzCloudAPIKeys),
-    );
+    assert!(settings_section_for_simple_subpage("appearance").is_none());
+    assert!(settings_section_for_simple_subpage("billing_and_usage").is_none());
+    assert!(settings_section_for_simple_subpage("platform").is_none());
     assert!(settings_section_for_simple_subpage("warp_agent").is_none());
     assert!(settings_section_for_simple_subpage("not_a_subpage").is_none());
 }

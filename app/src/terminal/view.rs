@@ -10576,9 +10576,7 @@ impl TerminalView {
                 }
                 ctx.notify();
             }
-            CodebaseIndexSpeedbumpBannerAction::ViewStatus => {
-                ctx.emit(Event::OpenSettings(SettingsSection::CodeIndexing));
-            }
+            CodebaseIndexSpeedbumpBannerAction::ViewStatus => {}
             CodebaseIndexSpeedbumpBannerAction::DismissForever => {
                 AISettings::handle(ctx).update(ctx, |ai_settings, ctx| {
                     if let Err(e) = ai_settings
@@ -14290,9 +14288,7 @@ impl TerminalView {
                     // Clicking this button doesn't mark the step as running, so we don't need to
                     // register anything to mark the step as complete.
                 }
-                InitProjectModelEvent::ViewCodebaseContextStatus => {
-                    ctx.emit(Event::OpenSettings(SettingsSection::CodeIndexing));
-                }
+                InitProjectModelEvent::ViewCodebaseContextStatus => {}
                 InitProjectModelEvent::LanguageServerInstalledAndEnabled => {
                     #[cfg(feature = "local_fs")]
                     me.start_lsp_server_in_active_pwd(ctx);
@@ -20834,9 +20830,7 @@ impl TerminalView {
             } => {
                 self.handle_usage_footer_toggled(block.id(), *conversation_id, *is_expanded, ctx);
             }
-            AIBlockEvent::OpenSettings => {
-                ctx.emit(Event::OpenSettings(SettingsSection::Features));
-            }
+            AIBlockEvent::OpenSettings => {}
             #[cfg(feature = "local_fs")]
             AIBlockEvent::OpenCodeInWarp { source, layout } => {
                 ctx.emit(Event::OpenCodeInWarp {
@@ -25687,9 +25681,7 @@ impl TerminalView {
                 );
                 ctx.notify();
             }
-            Configure => {
-                ctx.emit(Event::OpenSettings(SettingsSection::Features));
-            }
+            Configure => {}
             Close => {
                 // Update settings to mark notifications as dismissed to prevent banner from showing again
                 let current_settings = SessionSettings::as_ref(ctx).notifications.value().clone();
@@ -27508,9 +27500,7 @@ impl TypedActionView for TerminalView {
                     results_tx: results_tx.clone(),
                 });
             }
-            OpenTeamSettingsPage => {
-                ctx.emit(Event::OpenSettings(SettingsSection::Teams));
-            }
+            OpenTeamSettingsPage => {}
             SetMarkedText {
                 marked_text,
                 selected_range,
@@ -27833,9 +27823,7 @@ impl TypedActionView for TerminalView {
                     page: Some(MCPServersSettingsPage::Edit { item_id: None }),
                 });
             }
-            OpenBillingAndUsagePane => {
-                ctx.emit(Event::OpenSettings(SettingsSection::BillingAndUsage));
-            }
+            OpenBillingAndUsagePane => {}
             OpenAddRulePane => {
                 ctx.emit(Event::OpenAddRulePane);
             }

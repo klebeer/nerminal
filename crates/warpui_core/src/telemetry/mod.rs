@@ -72,39 +72,33 @@ pub fn create_event(
     )
 }
 
+// The three recording entry points are deliberately empty. Several hundred call
+// sites across the tree emit events, and the signatures are kept so they keep
+// compiling, but nothing is ever stored: the queue stays empty, so there is
+// nothing to flush to a file or a server no matter what the rest of the
+// pipeline decides to do.
 pub fn record_event(
-    user_id: Option<String>,
-    anonymous_id: String,
-    name: Cow<'static, str>,
-    payload: Option<Value>,
-    contains_ugc: bool,
-    timestamp: DateTime<Utc>,
+    _user_id: Option<String>,
+    _anonymous_id: String,
+    _name: Cow<'static, str>,
+    _payload: Option<Value>,
+    _contains_ugc: bool,
+    _timestamp: DateTime<Utc>,
 ) {
-    let mut telemetry = TELEMETRY.lock();
-    telemetry.record_event(
-        user_id,
-        anonymous_id,
-        name,
-        payload,
-        contains_ugc,
-        timestamp,
-    );
 }
 
-pub fn record_identify_user_event(user_id: String, anonymous_id: String, timestamp: DateTime<Utc>) {
-    let mut telemetry = TELEMETRY.lock();
-    telemetry.record_identify_user_event(user_id, anonymous_id, timestamp);
+pub fn record_identify_user_event(
+    _user_id: String,
+    _anonymous_id: String,
+    _timestamp: DateTime<Utc>,
+) {
 }
 
-/// Adds a 'App Active' event to the global event queue.  This should only be called in an async
-/// context.
 pub fn record_app_active_event(
-    user_id: Option<String>,
-    anonymous_id: String,
-    timestamp: DateTime<Utc>,
+    _user_id: Option<String>,
+    _anonymous_id: String,
+    _timestamp: DateTime<Utc>,
 ) {
-    let mut telemetry = TELEMETRY.lock();
-    telemetry.record_app_active(user_id, anonymous_id, timestamp);
 }
 
 pub fn flush_events() -> Vec<Event> {
