@@ -193,6 +193,13 @@ pub const OSS_DISABLED_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::WarpManagedSecrets,
     FeatureFlag::GitCredentialRefresh,
     FeatureFlag::AvatarInTabBar,
+    // The chip row drawn under a subshell, which puts a vendor name and an
+    // "Use agent" button in the terminal. Turning it off falls back to the
+    // older banner, so the subshell is still recognised and shell integration
+    // is still offered: `WarpifySettings` drives the bootstrap itself, not this
+    // flag, and the banner's wording carries no branding.
+    FeatureFlag::WarpifyFooter,
+
     // Anything that reports back or updates itself.
     FeatureFlag::GlobalAIAnalyticsCollection,
     FeatureFlag::GlobalAIAnalyticsBanner,

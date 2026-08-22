@@ -554,9 +554,16 @@ impl WarpifySettings {
             .any(|regex| regex.is_match(ssh_host.trim()))
     }
 
-    /// Returns whether the one-time tmux SSH deprecation notice should be shown to the user.
+    /// Never shown here. The notice announces the removal of another product's
+    /// tmux SSH flow, which this fork never shipped, and links to that product's
+    /// documentation. A migration message about a feature you never had is
+    /// noise, so the one-time flag is left to sit unread.
+    ///
+    /// The flag and the banner view are still built. Removing them reaches into
+    /// the rich-content metadata enum and a dozen files, which is a cleanup of
+    /// its own rather than something to fold into a rename.
     pub fn should_show_tmux_deprecation_notice(&self) -> bool {
-        *self.ssh_tmux_deprecation_notice_pending.value()
+        false
     }
 
     /// Marks the one-time tmux SSH deprecation notice as shown so it is not shown again.

@@ -46,7 +46,10 @@ impl WarpifyBannerState {
     }
 
     pub fn title(&self) -> &str {
-        "Warpify subshell"
+        // Says what the button does rather than carrying another product's
+        // name. The internal identifiers stay as they are: the keybinding
+        // `terminal:warpify_subshell` is persisted in user config.
+        "Enable shell integration"
     }
 
     pub fn action(&self) -> TerminalAction {
