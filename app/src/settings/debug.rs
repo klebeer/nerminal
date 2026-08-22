@@ -55,7 +55,7 @@ define_settings_group!(DebugSettings, settings: [
     },
     show_memory_stats: ShowMemoryStats {
         type: bool,
-        default: true,
+        default: false,
         supported_platforms: SupportedPlatforms::ALL,
         sync_to_cloud: SyncToCloud::Never,
         surface: settings::SettingSurfaces::GUI,
@@ -65,7 +65,9 @@ define_settings_group!(DebugSettings, settings: [
 
 impl DebugSettings {
     pub fn should_show_memory_stats(&self) -> bool {
-        // We only want to show memory stats in dogfood and not in tests.
+        // The per-block memory footer is a debugging aid, so it is off unless
+        // asked for and unreachable in a release build regardless: the channel
+        // check below is false for anything but a debug or internal build.
         *self.show_memory_stats.value()
             && warp_core::channel::ChannelState::enable_debug_features()
             && !cfg!(test)
