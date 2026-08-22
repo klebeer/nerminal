@@ -107,7 +107,11 @@ impl FontFallbackCache {
 }
 
 impl Cache {
-    pub(crate) fn load_fallback_family_from_bytes(
+    /// Registers a family as available for fallback. A family registered here
+    /// is never fetched, because `request_fallback_font_for_char` skips any
+    /// name already loaded, so this is also how a bundled font is installed as
+    /// a fallback ahead of any request for it.
+    pub fn load_fallback_family_from_bytes(
         &mut self,
         external_family: ExternalFontFamily,
         bytes: Vec<Vec<u8>>,

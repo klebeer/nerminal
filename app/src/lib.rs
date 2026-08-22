@@ -35,7 +35,6 @@ mod dynamic_libraries;
 mod env_vars;
 mod experiments;
 mod external_secrets;
-#[cfg(target_family = "wasm")]
 mod font_fallback;
 mod global_resource_handles;
 mod gpu_state;
@@ -3053,8 +3052,9 @@ fn launch(ctx: &mut warpui::AppContext, app_state: Option<AppState>, launch_mode
         timer.mark_interval_end("KEYBINDINGS_LOADED");
     });
 
-    // For now, we only specify application-level fallback fonts on web.
-    #[cfg(target_family = "wasm")]
+    // Routes the private-use ranges a Nerd Font prompt draws from to the font
+    // bundled with the app, so they do not depend on the machine having a
+    // patched font installed.
     ctx.set_fallback_font_fn(font_fallback::fallback_font_fn);
 
     match launch_mode {
