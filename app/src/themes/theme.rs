@@ -52,6 +52,8 @@ pub enum ThemeKind {
     #[schemars(description = "Dark")]
     Dark,
     #[default]
+    #[schemars(description = "Nosferatu")]
+    Nosferatu,
     #[schemars(description = "Dracula")]
     Dracula,
     #[schemars(description = "Fancy Dracula")]
@@ -112,6 +114,7 @@ impl std::fmt::Display for ThemeKind {
         let value = match &self {
             ThemeKind::Light => "Light",
             ThemeKind::Dark => "Dark",
+            ThemeKind::Nosferatu => "Nosferatu",
             ThemeKind::Dracula => "Dracula",
             ThemeKind::SolarizedDark => "Solarized Dark",
             ThemeKind::SolarizedLight => "Solarized Light",
@@ -465,33 +468,11 @@ pub struct WarpThemeConfig {
 impl WarpThemeConfig {
     pub fn new() -> Self {
         // preload with built-in themes
+        // Nosferatu is the one this build ships. `Light` stays because the
+        // "match the system theme" setting needs a light half to pair with.
         let theme_map: HashMap<ThemeKind, WarpTheme> = HashMap::from_iter([
-            (ThemeKind::SentReferralReward, sent_referral_reward()),
-            (
-                ThemeKind::ReceivedReferralReward,
-                received_referral_reward(),
-            ),
-            (ThemeKind::Dark, dark_theme()),
+            (ThemeKind::Nosferatu, nosferatu()),
             (ThemeKind::Light, light_theme()),
-            (ThemeKind::SolarizedDark, solarized_dark()),
-            (ThemeKind::SolarizedLight, solarized_light()),
-            (ThemeKind::Dracula, dracula()),
-            (ThemeKind::GruvboxDark, gruvbox_dark()),
-            (ThemeKind::GruvboxLight, gruvbox_light()),
-            (ThemeKind::JellyFish, jellyfish()),
-            (ThemeKind::Koi, koi()),
-            (ThemeKind::Leafy, leafy()),
-            (ThemeKind::Marble, marble()),
-            (ThemeKind::PinkCity, pink_city()),
-            (ThemeKind::Snowy, snowy()),
-            (ThemeKind::DarkCity, dark_city()),
-            (ThemeKind::RedRock, red_rock()),
-            (ThemeKind::CyberWave, cyber_wave()),
-            (ThemeKind::WillowDream, willow_dream()),
-            (ThemeKind::FancyDracula, fancy_dracula()),
-            (ThemeKind::Phenomenon, phenomenon()),
-            (ThemeKind::SolarFlare, solar_flare()),
-            (ThemeKind::Adeberry, adeberry()),
         ]);
         WarpThemeConfig { theme_map }
     }

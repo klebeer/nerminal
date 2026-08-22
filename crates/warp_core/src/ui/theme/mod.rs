@@ -165,6 +165,14 @@ impl VerticalGradient {
         VerticalGradient { top, bottom }
     }
 
+    pub fn top(&self) -> ColorU {
+        self.top
+    }
+
+    pub fn bottom(&self) -> ColorU {
+        self.bottom
+    }
+
     fn midcolor(&self) -> ColorU {
         mid_coloru(self.top, self.bottom)
     }

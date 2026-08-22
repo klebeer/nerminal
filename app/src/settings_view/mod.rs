@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use about_page::AboutPageView;
+use appearance_page::{AppearancePageAction, AppearanceSettingsPageView};
 use environments_page::EnvironmentsPageView;
 use itertools::Itertools as _;
 use keybindings::KeybindingsView;
@@ -49,6 +50,8 @@ use crate::pane_group::{BackingView, Direction, PaneConfiguration, PaneEvent, Sp
 use crate::server::telemetry::MCPServerCollectionPaneEntrypoint;
 use crate::settings::{AISettings, BlockVisibilitySettings, SettingsFileError};
 use crate::settings_view::mcp_servers_page::{MCPServersSettingsPage, MCPServersSettingsPageEvent};
+use crate::terminal::SizeInfo;
+use crate::terminal::model::blockgrid::BlockGrid;
 use crate::ui_components::icons;
 use crate::util::bindings::{BindingGroup, CustomAction, keybinding_name_to_display_string};
 use crate::view_components::ToastFlavor;
@@ -57,7 +60,9 @@ use crate::{GlobalResourceHandlesProvider, TelemetryEvent};
 
 mod about_page;
 mod agent_assisted_environment_modal;
+mod appearance_page;
 mod delete_environment_confirmation_dialog;
+mod directory_color_add_picker;
 pub(crate) mod environments_page;
 pub(crate) mod handoff_environment_creation_modal;
 pub mod keybindings;
@@ -170,6 +175,7 @@ pub enum SettingsViewEvent {
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub enum SettingsSection {
     About,
+    Appearance,
     #[default]
     Keybindings,
     Scripting,
@@ -185,6 +191,7 @@ use crate::util::bindings::custom_tag_to_keystroke;
 impl Display for SettingsSection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            SettingsSection::Appearance => write!(f, "Appearance"),
             SettingsSection::Keybindings => write!(f, "Keyboard shortcuts"),
             SettingsSection::Scripting => write!(f, "Scripting"),
             SettingsSection::ShellIntegration => write!(f, "Shell integration"),
@@ -212,6 +219,7 @@ impl SettingsSection {
     pub fn slug(self) -> &'static str {
         match self {
             Self::About => "About",
+            Self::Appearance => "Appearance",
             Self::Keybindings => "Keyboard shortcuts",
             Self::Scripting => "Scripting",
             Self::ShellIntegration => "shell_integration",
@@ -230,6 +238,7 @@ impl SettingsSection {
     pub fn from_slug(slug: &str) -> Option<Self> {
         let section = match slug {
             "About" => Self::About,
+            "Appearance" => Self::Appearance,
             "Keyboard shortcuts" => Self::Keybindings,
             "Scripting" => Self::Scripting,
             "shell_integration" | "Warpify" => Self::ShellIntegration,
@@ -461,6 +470,7 @@ pub fn init_actions_from_parent_view<T: Action + Clone>(
     context: &ContextPredicate,
     builder: fn(SettingsAction) -> T,
 ) {
+    appearance_page::init_actions_from_parent_view(app, context, builder);
     shell_integration_page::init_actions_from_parent_view(app, context, builder);
 
     if ChannelState::enable_debug_features() || cfg!(windows) {
@@ -758,6 +768,7 @@ pub enum DebugSettingsAction {
 #[derive(Debug, Clone)]
 pub enum SettingsAction {
     SelectAndRefresh(SettingsSection),
+    AppearancePageToggle(AppearancePageAction),
     ShellIntegrationPageToggle(ShellIntegrationPageAction),
     Tab,
     Split(Direction),
@@ -819,6 +830,7 @@ fn next_stop_index(current: usize, len: usize, direction: CycleDirection) -> usi
 macro_rules! update_page {
     ($handle:expr_2021, $update:expr_2021, $ctx:expr_2021) => {
         match $handle {
+            SettingsPageViewHandle::Appearance(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::Keybindings(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::ShellIntegration(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::Scripting(handle) => $ctx.update_view(handle, $update),
@@ -868,6 +880,12 @@ impl SettingsView {
         let environments_page_handle = ctx.add_typed_action_view(EnvironmentsPageView::new);
         ctx.subscribe_to_view(&environments_page_handle, |me, _, event, ctx| {
             me.handle_environments_page_event(event, ctx);
+        });
+
+        // Appearance & themes page
+        let appearance_page_handle = ctx.add_typed_action_view(AppearanceSettingsPageView::new);
+        ctx.subscribe_to_view(&appearance_page_handle, |me, _, event, ctx| {
+            me.handle_appearance_page_event(event, ctx);
         });
 
         // Keybindings page
@@ -920,6 +938,7 @@ impl SettingsView {
         });
 
         let mut settings_pages = vec![
+            SettingsPage::new(appearance_page_handle),
             SettingsPage::new(keybindings_handle),
             SettingsPage::new(shell_integration_page_handle),
         ];
@@ -936,7 +955,7 @@ impl SettingsView {
 
         // The sidebar. Everything else is configured in `~/.nerminal/settings.toml`,
         // which hot-reloads; only the pages a file cannot replace are listed here.
-        let mut nav_items = vec![SettingsSection::Keybindings];
+        let mut nav_items = vec![SettingsSection::Appearance, SettingsSection::Keybindings];
 
         if FeatureFlag::WarpControlCli.is_enabled() {
             nav_items.push(SettingsSection::Scripting);
@@ -1167,6 +1186,46 @@ impl SettingsView {
             .collect();
     }
 
+    pub fn set_ps1_info(
+        &mut self,
+        ps1_grid_info: Option<(BlockGrid, SizeInfo)>,
+        ctx: &mut ViewContext<Self>,
+    ) {
+        if let Some(appearance_page) = self.settings_page(SettingsSection::Appearance)
+            && let SettingsPageViewHandle::Appearance(view) = &appearance_page.view_handle
+        {
+            view.update(ctx, |view, ctx| {
+                view.set_ps1_info(ps1_grid_info, ctx);
+            })
+        }
+    }
+
+    pub fn get_ps1_info(&self, app: &AppContext) -> Option<(BlockGrid, SizeInfo)> {
+        self.settings_page(SettingsSection::Appearance)
+            .and_then(|appearance_page| {
+                if let SettingsPageViewHandle::Appearance(view) = &appearance_page.view_handle {
+                    view.read(app, |view, _| view.get_ps1_info().map(ToOwned::to_owned))
+                } else {
+                    None
+                }
+            })
+    }
+
+    fn handle_appearance_page_event(
+        &mut self,
+        event: &SettingsPageEvent,
+        ctx: &mut ViewContext<Self>,
+    ) {
+        match event {
+            SettingsPageEvent::FocusModal => ctx.focus(&self.search_editor),
+            SettingsPageEvent::Pane(_)
+            | SettingsPageEvent::EnvironmentSetupModeSelectorToggled { .. }
+            | SettingsPageEvent::AgentAssistedEnvironmentModalToggled { .. } => {
+                // Only meaningful when the view is hosted inside a pane.
+            }
+        }
+    }
+
     fn handle_environments_page_event(
         &mut self,
         event: &SettingsPageEvent,
@@ -1338,6 +1397,7 @@ impl SettingsView {
 
     fn should_render_page(&self, settings_page: &SettingsPage, app: &AppContext) -> bool {
         match &settings_page.view_handle {
+            SettingsPageViewHandle::Appearance(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::Keybindings(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::About(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::ShellIntegration(v) => v.as_ref(app).should_render(app),
@@ -1743,6 +1803,15 @@ impl TypedActionView for SettingsView {
                         },
                         ctx
                     );
+                }
+            }
+            SettingsAction::AppearancePageToggle(appearance_action) => {
+                if let Some(appearance_page) = self.settings_page(SettingsSection::Appearance)
+                    && let SettingsPageViewHandle::Appearance(view) = &appearance_page.view_handle
+                {
+                    view.update(ctx, |view, ctx| {
+                        view.handle_action(appearance_action, ctx);
+                    })
                 }
             }
             SettingsAction::ShellIntegrationPageToggle(shell_integration_action) => {

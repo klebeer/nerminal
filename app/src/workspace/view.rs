@@ -8621,6 +8621,16 @@ impl Workspace {
             return;
         }
 
+        // Seed the appearance page's prompt preview from the active session.
+        // `active_session_ps1_grid_info` returns None when the active tab has no
+        // running terminal session, e.g. only notebook or workflow panes.
+        let ps1_grid_info = self.active_session_ps1_grid_info(ctx);
+        self.settings_pane.update(ctx, move |settings_pane, ctx| {
+            if ps1_grid_info.is_some() {
+                settings_pane.set_ps1_info(ps1_grid_info, ctx);
+            }
+        });
+
         let panes_layout = PanesLayout::Snapshot(Box::new(PaneNodeSnapshot::Leaf(LeafSnapshot {
             is_focused: true,
             custom_vertical_tabs_title: None,
@@ -11383,8 +11393,8 @@ impl Workspace {
             ThemeDeletionModalEvent::DeleteCurrentTheme => {
                 self.theme_chooser_view
                     .update(ctx, |theme_chooser_view, ctx| {
-                        // Reset theme to Dark if we are deleting the current theme
-                        theme_chooser_view.select_and_save_theme(&ThemeKind::Dark, ctx);
+                        // Fall back to the shipped theme when the current one is deleted.
+                        theme_chooser_view.select_and_save_theme(&ThemeKind::Nosferatu, ctx);
                     });
             }
         }
@@ -19452,7 +19462,11 @@ impl Workspace {
     ) {
         // Try to get a prompt preview from an active session. Otherwise, read it from the settings
         // view.
-        let ps1_grid_info = self.active_session_ps1_grid_info(ctx);
+        // Prefer a live session's prompt; fall back to whatever the settings view has.
+        let ps1_grid_info = self.active_session_ps1_grid_info(ctx).or_else(|| {
+            self.settings_pane
+                .read(ctx, |settings, app| settings.get_ps1_info(app))
+        });
         let chip_runtime_capabilities = self
             .active_tab_pane_group()
             .as_ref(ctx)

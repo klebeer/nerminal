@@ -20,13 +20,14 @@ use warpui::elements::{
 };
 use warpui::fonts::{Properties, Weight};
 use warpui::platform::Cursor;
-use warpui::ui_components::button::ButtonVariant;
+use warpui::ui_components::button::{Button, ButtonVariant};
 use warpui::ui_components::components::{Coords, UiComponent, UiComponentStyles};
 use warpui::units::Pixels;
 use warpui::{Action, AppContext, SingletonEntity, ViewContext, ViewHandle};
 
 use super::SettingsSection;
 use super::about_page::AboutPageView;
+use super::appearance_page::AppearanceSettingsPageView;
 use super::environments_page::EnvironmentsPageView;
 use super::keybindings::KeybindingsView;
 use super::mcp_servers_page::MCPServersSettingsPageView;
@@ -87,6 +88,7 @@ pub trait SettingsPageMeta {
 /// It is required to allow for SettingsPage struct be put in the collection (ie. vector).
 #[derive(Clone)]
 pub enum SettingsPageViewHandle {
+    Appearance(ViewHandle<AppearanceSettingsPageView>),
     Keybindings(ViewHandle<KeybindingsView>),
     About(ViewHandle<AboutPageView>),
     ShellIntegration(ViewHandle<ShellIntegrationPageView>),
@@ -99,6 +101,7 @@ impl SettingsPageViewHandle {
     pub fn child_view(&self) -> Box<dyn Element> {
         use SettingsPageViewHandle::*;
         match self {
+            Appearance(view_handle) => ChildView::new(view_handle).finish(),
             Keybindings(view_handle) => ChildView::new(view_handle).finish(),
             About(view_handle) => ChildView::new(view_handle).finish(),
             ShellIntegration(view_handle) => ChildView::new(view_handle).finish(),
@@ -1591,4 +1594,29 @@ pub(super) trait SettingsWidget {
         appearance: &Appearance,
         app: &AppContext,
     ) -> Box<dyn Element>;
+}
+
+/// Builds a standardized button for resetting a setting to its default value.
+/// Callers should add an `on_click` handler and add the button to the UI below
+/// the setting.
+pub(super) fn build_reset_button(
+    appearance: &Appearance,
+    mouse_state: MouseStateHandle,
+    changed_from_default: bool,
+) -> Button {
+    let theme = appearance.theme();
+    appearance
+        .ui_builder()
+        .reset_button(
+            ButtonVariant::Text,
+            mouse_state,
+            changed_from_default,
+            theme.disabled_text_color(theme.background()).into(),
+        )
+        .with_style(UiComponentStyles {
+            padding: Some(Coords::default().bottom(HEADER_PADDING).top(5.)),
+            font_size: Some(appearance.ui_font_size() * 0.8),
+            ..Default::default()
+        })
+        .with_text_label("Reset to default".to_owned())
 }

@@ -751,6 +751,28 @@ where
         self.dropdown.as_ref(ctx).items_len()
     }
 
+    pub fn add_items(&mut self, items: Vec<DropdownItem<A>>, ctx: &mut ViewContext<Self>) {
+        self.items.extend(items.iter().map(|item| item.into()));
+        self.set_filtered_items(ctx);
+    }
+
+    /// Select the item at the given index. If the index is out of bounds, this clears the selection.
+    pub fn set_selected_by_index(&mut self, selected_index: usize, ctx: &mut ViewContext<Self>) {
+        self.dropdown.update(ctx, |dropdown, ctx| {
+            dropdown.set_selected_by_index(selected_index, ctx);
+            ctx.notify();
+        });
+        self.selected_item = self.selected_item_in_dropdown(ctx);
+        ctx.notify();
+    }
+
+    pub fn clear_filter(&mut self, ctx: &mut ViewContext<Self>) {
+        self.filter_editor.update(ctx, |editor, ctx| {
+            editor.clear_buffer(ctx);
+            ctx.notify();
+        });
+    }
+
     pub fn set_menu_header_to_static(&mut self, header: &'static str) {
         self.static_menu_header = Some(header);
     }
