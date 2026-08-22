@@ -8,7 +8,9 @@ use warpui::{AppContext, SingletonEntity};
 
 use super::EnforceMinimumContrast as EnforceMinimumContrastEnum;
 
-pub const DEFAULT_MONOSPACE_FONT_NAME: &str = "Hack";
+/// The bundled icon font doubles as the default, so a prompt drawing Nerd Font
+/// glyphs works on a fresh install without anyone changing a setting.
+pub const DEFAULT_MONOSPACE_FONT_NAME: &str = crate::font_fallback::NERD_FONT_NAME;
 pub const DEFAULT_MONOSPACE_FONT_SIZE: f32 = 13.0;
 pub const DEFAULT_MONOSPACE_FONT_WEIGHT: Weight = Weight::Normal;
 

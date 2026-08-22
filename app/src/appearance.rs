@@ -191,19 +191,25 @@ impl Entity for AppearanceManager {
 
 impl SingletonEntity for AppearanceManager {}
 
+/// Loads the bundled icon font, which serves two roles from one copy: it is the
+/// default monospace family, and it is the fallback for the private-use ranges
+/// `font_fallback::fallback_font_fn` routes to it. Registering the fallback up
+/// front means the glyph is there the first time a prompt asks for it.
 fn load_default_monospace_font_family(ctx: &mut AppContext) -> anyhow::Result<FamilyId> {
     warpui::fonts::Cache::handle(ctx).update(ctx, |font_cache, _| {
-        let default_monospace_font_family = font_cache.load_family_from_bytes(
-            "Hack",
-            vec![
-                ASSETS.get("bundled/fonts/hack/Hack-Italic.ttf")?.to_vec(),
-                ASSETS.get("bundled/fonts/hack/Hack-Bold.ttf")?.to_vec(),
-                ASSETS.get("bundled/fonts/hack/Hack-Regular.ttf")?.to_vec(),
-                ASSETS
-                    .get("bundled/fonts/hack/Hack-BoldItalic.ttf")?
-                    .to_vec(),
-            ],
+        let bytes = font_fallback::NERD_FONT_FILES
+            .iter()
+            .map(|path| Ok(ASSETS.get(path)?.to_vec()))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
+        let default_monospace_font_family = font_cache.load_fallback_family_from_bytes(
+            ExternalFontFamily {
+                name: font_fallback::NERD_FONT_NAME,
+                font_urls: Arc::new(Vec::new()),
+            },
+            bytes,
         )?;
+
         let default_monospace_font =
             font_cache.select_font(default_monospace_font_family, Default::default());
         font_cache.glyph_typographic_bounds(
@@ -218,26 +224,6 @@ fn load_default_monospace_font_family(ctx: &mut AppContext) -> anyhow::Result<Fa
     })
 }
 
-/// Installs the bundled icon font as the fallback for the private-use ranges
-/// that `font_fallback::fallback_font_fn` routes to it. Registering it up front
-/// means the glyph is there the first time a prompt asks for it, with no fetch
-/// and no repaint once one lands.
-fn load_icon_fallback_font_family(ctx: &mut AppContext) -> anyhow::Result<FamilyId> {
-    warpui::fonts::Cache::handle(ctx).update(ctx, |font_cache, _| {
-        let bytes = font_fallback::NERD_FONT_FILES
-            .iter()
-            .map(|path| Ok(ASSETS.get(path)?.to_vec()))
-            .collect::<anyhow::Result<Vec<_>>>()?;
-
-        font_cache.load_fallback_family_from_bytes(
-            ExternalFontFamily {
-                name: font_fallback::NERD_FONT_NAME,
-                font_urls: Arc::new(Vec::new()),
-            },
-            bytes,
-        )
-    })
-}
 
 fn load_default_ui_font_family(ctx: &mut AppContext) -> anyhow::Result<FamilyId> {
     warpui::fonts::Cache::handle(ctx).update(ctx, |font_cache, _| {
@@ -330,11 +316,6 @@ fn build_appearance(ctx: &mut AppContext) -> Appearance {
     let default_monospace_font_family = load_default_monospace_font_family(ctx)
         .expect("unable to load default monospace font family");
 
-    // Not fatal: without it, prompts drawing Nerd Font icons get blank cells,
-    // which is worse than the alternative but not worth refusing to start over.
-    if let Err(error) = load_icon_fallback_font_family(ctx) {
-        log::warn!("unable to load the bundled icon fallback font: {error:?}");
-    }
     let monospace_font_name = FontSettings::as_ref(ctx)
         .monospace_font_name
         .value()

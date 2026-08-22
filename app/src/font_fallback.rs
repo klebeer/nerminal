@@ -16,11 +16,11 @@ pub const NERD_FONT_FILES: [&str; 4] = [
 ];
 
 lazy_static! {
-    /// Nerd Font icons live in Unicode's private use area. Whether the platform
-    /// cascade reaches them depends on the machine having a patched font
-    /// installed separately, so without this the same prompt renders icons on
-    /// one machine and blank cells on another. Carrying the family makes that
-    /// answer the same everywhere.
+    /// Nerd Font icons live in Unicode's private use area, which carries no
+    /// script tag for the platform cascade to match on. Having a patched font
+    /// installed system-wide does not rescue them: a machine with several of
+    /// them installed still drew blank cells until the chosen font itself
+    /// carried the glyphs. Routing the ranges here is what makes them render.
     ///
     /// The URL list is empty on purpose. The family is loaded from the app
     /// bundle at startup, and a family already loaded is never requested, so

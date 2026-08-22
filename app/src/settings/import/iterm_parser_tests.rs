@@ -1,5 +1,6 @@
 use async_io::block_on;
 use pathfinder_color::ColorU;
+use crate::settings::DEFAULT_MONOSPACE_FONT_NAME;
 use plist::{Dictionary, Value};
 use virtual_fs::{Stub, VirtualFS};
 use warp_core::ui::theme::{Fill, WarpTheme};
@@ -333,14 +334,17 @@ fn test_parse_font_with_default_size() {
 
 #[test]
 fn test_parse_font_with_default_font() {
+    // A profile whose font is already our default carries no information, so
+    // importing it must not pin the font. Named through the constant rather
+    // than spelled out, so changing the default does not fail this.
     let warp_default_profile = ITermProfile {
-        font_name: Some("Hack".to_string()),
+        font_name: Some(DEFAULT_MONOSPACE_FONT_NAME.to_string()),
         font_size: Some("16".to_string()),
         ..Default::default()
     };
     let fonts = [FontInfo {
-        family_name: "Hack".to_string(),
-        font_names: vec!["Hack".to_string()],
+        family_name: DEFAULT_MONOSPACE_FONT_NAME.to_string(),
+        font_names: vec![DEFAULT_MONOSPACE_FONT_NAME.to_string()],
         is_monospace: false,
     }];
     assert_eq!(
