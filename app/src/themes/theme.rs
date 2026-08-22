@@ -54,6 +54,8 @@ pub enum ThemeKind {
     #[default]
     #[schemars(description = "Nosferatu")]
     Nosferatu,
+    #[schemars(description = "Nosferatu Light")]
+    NosferatuLight,
     #[schemars(description = "Dracula")]
     Dracula,
     #[schemars(description = "Fancy Dracula")]
@@ -115,6 +117,7 @@ impl std::fmt::Display for ThemeKind {
             ThemeKind::Light => "Light",
             ThemeKind::Dark => "Dark",
             ThemeKind::Nosferatu => "Nosferatu",
+            ThemeKind::NosferatuLight => "Nosferatu Light",
             ThemeKind::Dracula => "Dracula",
             ThemeKind::SolarizedDark => "Solarized Dark",
             ThemeKind::SolarizedLight => "Solarized Light",
@@ -468,10 +471,13 @@ pub struct WarpThemeConfig {
 impl WarpThemeConfig {
     pub fn new() -> Self {
         // preload with built-in themes
-        // Nosferatu is the one this build ships. `Light` stays because the
-        // "match the system theme" setting needs a light half to pair with.
+        // Nosferatu is the one this build ships, and Nosferatu Light is what
+        // "match the system theme" pairs it with. `Light` stays as a plain
+        // light option that carries none of the palette.
         let theme_map: HashMap<ThemeKind, WarpTheme> = HashMap::from_iter([
             (ThemeKind::Nosferatu, nosferatu()),
+            (ThemeKind::NosferatuLight, nosferatu_light()),
+            (ThemeKind::Dracula, dracula()),
             (ThemeKind::Light, light_theme()),
         ]);
         WarpThemeConfig { theme_map }

@@ -75,6 +75,56 @@ const NOSFERATU_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
     AnsiColor::from_u32(0xFFFCF5FF),
 );
 
+/// The same hues as the dark theme, darkened until they read on sand. Two
+/// things invert here and will surprise anyone skimming the values: every
+/// bright slot is *darker* than its normal sibling, because on a light
+/// background emphasis has to gain contrast, and ANSI white is a mid plum-grey
+/// rather than the foreground, because the foreground is nearly black.
+const NOSFERATU_LIGHT_NORMAL_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x6A5870FF),
+    AnsiColor::from_u32(0xC01230FF),
+    AnsiColor::from_u32(0x2F5220FF),
+    AnsiColor::from_u32(0x5E4A10FF),
+    AnsiColor::from_u32(0x3A4FA8FF),
+    AnsiColor::from_u32(0x9A2472FF),
+    AnsiColor::from_u32(0x1F5F5AFF),
+    AnsiColor::from_u32(0x4A3B50FF),
+);
+const NOSFERATU_LIGHT_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x574A5CFF),
+    AnsiColor::from_u32(0x8E0B24FF),
+    AnsiColor::from_u32(0x1E3A12FF),
+    AnsiColor::from_u32(0x3A2B08FF),
+    AnsiColor::from_u32(0x26357AFF),
+    AnsiColor::from_u32(0x6E1852FF),
+    AnsiColor::from_u32(0x14433FFF),
+    AnsiColor::from_u32(0x2A1730FF),
+);
+
+/// Dracula, from the published ANSI specification rather than the older
+/// mapping Warp bundled, which repeated five of the eight normal colours in the
+/// bright bank and drew ANSI black as pure black on a near-black background.
+const DRACULA_NORMAL_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x21222CFF),
+    AnsiColor::from_u32(0xFF5555FF),
+    AnsiColor::from_u32(0x50FA7BFF),
+    AnsiColor::from_u32(0xF1FA8CFF),
+    AnsiColor::from_u32(0xBD93F9FF),
+    AnsiColor::from_u32(0xFF79C6FF),
+    AnsiColor::from_u32(0x8BE9FDFF),
+    AnsiColor::from_u32(0xF8F8F2FF),
+);
+const DRACULA_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x6272A4FF),
+    AnsiColor::from_u32(0xFF6E6EFF),
+    AnsiColor::from_u32(0x69FF94FF),
+    AnsiColor::from_u32(0xFFFFA5FF),
+    AnsiColor::from_u32(0xD6ACFFFF),
+    AnsiColor::from_u32(0xFF92DFFF),
+    AnsiColor::from_u32(0xA4FFFFFF),
+    AnsiColor::from_u32(0xFFFFFFFF),
+);
+
 const PHENOMENON_NORMAL_COLORS: AnsiColors = AnsiColors::new(
     AnsiColor::from_u32(0x121212FF),
     AnsiColor::from_u32(0xD22D1EFF),
@@ -127,6 +177,17 @@ pub(super) fn dark_mode_colors() -> TerminalColors {
 
 pub(super) fn nosferatu_colors() -> TerminalColors {
     TerminalColors::new(NOSFERATU_NORMAL_COLORS, NOSFERATU_BRIGHT_COLORS)
+}
+
+pub(super) fn nosferatu_light_colors() -> TerminalColors {
+    TerminalColors::new(
+        NOSFERATU_LIGHT_NORMAL_COLORS,
+        NOSFERATU_LIGHT_BRIGHT_COLORS,
+    )
+}
+
+pub(super) fn dracula_colors() -> TerminalColors {
+    TerminalColors::new(DRACULA_NORMAL_COLORS, DRACULA_BRIGHT_COLORS)
 }
 
 pub(super) fn phenomenon_colors() -> TerminalColors {
@@ -183,6 +244,40 @@ pub(super) fn nosferatu() -> WarpTheme {
         nosferatu_colors(),
         None,
         Some("Nosferatu".to_string()),
+    )
+}
+
+pub(super) fn nosferatu_light() -> WarpTheme {
+    WarpTheme::new(
+        // The sand the sun lands on, not the sky. The two stops sit 1.25:1
+        // apart, far shorter than the dark theme's: a light background bands
+        // visibly, and a wide one would force every colour down into near-black.
+        Fill::VerticalGradient(VerticalGradient::new(
+            ColorU::from_u32(0xFBF3E2FF),
+            ColorU::from_u32(0xEBD9C2FF),
+        )),
+        ColorU::from_u32(0x2A1730FF),
+        // Burnt orange rather than the dark theme's sun. Foreground over this
+        // reads at 2.53:1, so anything filling with it needs `main_text_color`.
+        Fill::Solid(ColorU::from_u32(0x9C420CFF)),
+        None,
+        Some(Details::Lighter),
+        nosferatu_light_colors(),
+        None,
+        Some("Nosferatu Light".to_string()),
+    )
+}
+
+pub(super) fn dracula() -> WarpTheme {
+    WarpTheme::new(
+        Fill::Solid(ColorU::from_u32(0x282A36FF)),
+        ColorU::from_u32(0xF8F8F2FF),
+        Fill::Solid(ColorU::from_u32(0xFF79C6FF)),
+        None,
+        Some(Details::Darker),
+        dracula_colors(),
+        None,
+        Some("Dracula".to_string()),
     )
 }
 
