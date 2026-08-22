@@ -2,16 +2,16 @@
 #
 # Build, strip, sign and (optionally) notarize a distributable Nerminal.app.
 #
-# Releases are numbered `vMAJOR.MINOR.PATCH` and named. Names run
-# alphabetically through 80s metal, horror and arcade vocabulary, avoiding
-# anyone's trademarks:
+# Releases are numbered `vMAJOR.MINOR.PATCH` and named. After the first one the
+# names run alphabetically through 80s metal, horror and arcade vocabulary,
+# avoiding anyone's trademarks:
 #
-#   1.0 Aftershock   1.6 Game Over     2.2 Mosh Pit    2.8 Speedrun
-#   1.1 Boss Rush    1.7 High Score    2.3 Nosferatu   2.9 Tombstone
-#   1.2 Continue     1.8 Insert Coin   2.4 Overworld   3.0 Up Up Down Down
-#   1.3 Dead Air     1.9 Jawbreaker    2.5 Power Up
-#   1.4 Extra Life   2.0 Killswitch    2.6 Quicksave
-#   1.5 Final Boss   2.1 Level Up      2.7 Respawn
+#   1.0 Nosferatu    1.6 Game Over     2.2 Mosh Pit     2.8 Speedrun
+#   1.1 Aftershock   1.7 High Score    2.3 Overworld    2.9 Tombstone
+#   1.2 Boss Rush    1.8 Insert Coin   2.4 Power Up     3.0 Up Up Down Down
+#   1.3 Continue     1.9 Jawbreaker    2.5 Quicksave
+#   1.4 Dead Air     2.0 Killswitch    2.6 Respawn
+#   1.5 Extra Life   2.1 Level Up      2.7 Final Boss
 #
 # Usage:
 #   ./script/release v1.0.0 "Nosferatu"            # build and sign
@@ -76,12 +76,44 @@ codesign -dvvv "$APP" 2>&1 | grep -E "Authority=Developer ID|Timestamp="
 
 if [[ "$NOTARIZE" == true ]]; then
   ZIP="target/release/Nerminal-${TAG}.zip"
-  echo "==> Submitting to Apple for notarization"
+  echo "==> Submitting the app to Apple for notarization"
   ditto -c -k --keepParent "$APP" "$ZIP"
   xcrun notarytool submit "$ZIP" --keychain-profile nerminal --wait
   xcrun stapler staple "$APP"
   xcrun stapler validate "$APP"
-  echo "==> Notarized and stapled"
+  echo "==> App notarized and stapled"
+
+  # The disk image is what people download, so it gets its own signature and
+  # its own notarization. It has to be built from the already-stapled app so
+  # the copy inside it validates offline too.
+  DMG="target/release/Nerminal-${TAG}.dmg"
+  STAGE="target/release/dmg-stage"
+  echo "==> Building the disk image"
+  rm -rf "$STAGE" "$DMG"
+  mkdir -p "$STAGE"
+  ditto "$APP" "$STAGE/Nerminal.app"
+  create-dmg \
+    --volname "Nerminal" \
+    --no-internet-enable \
+    --background app/assets/resources/mac/nerminal_install_image.png \
+    --icon-size 128 \
+    --window-size 700 500 \
+    --format UDZO \
+    --filesystem APFS \
+    --app-drop-link 550 250 \
+    --icon "Nerminal.app" 150 250 \
+    "$DMG" "$STAGE"
+  rm -rf "$STAGE"
+
+  echo "==> Signing the disk image"
+  codesign --force --timestamp --sign "$CERT" "$DMG"
+
+  echo "==> Submitting the disk image to Apple"
+  xcrun notarytool submit "$DMG" --keychain-profile nerminal --wait
+  xcrun stapler staple "$DMG"
+  xcrun stapler validate "$DMG"
+  echo "==> Disk image notarized and stapled: $DMG"
+  spctl -a -vvv -t install "$APP" 2>&1 | head -3
 fi
 
 du -sh "$APP"
