@@ -2,16 +2,15 @@
 #
 # Build, strip, sign and (optionally) notarize a distributable Nerminal.app.
 #
-# Releases are numbered `vMAJOR.MINOR.PATCH` and named. After the first one the
-# names run alphabetically through 80s metal, horror and arcade vocabulary,
-# avoiding anyone's trademarks:
+# Releases are numbered `vMAJOR.MINOR.PATCH` and named after vampires, drawn
+# from folklore or from fiction old enough to be public domain, so nobody's
+# trademark is involved:
 #
-#   1.0 Nosferatu    1.6 Game Over     2.2 Mosh Pit     2.8 Speedrun
-#   1.1 Aftershock   1.7 High Score    2.3 Overworld    2.9 Tombstone
-#   1.2 Boss Rush    1.8 Insert Coin   2.4 Power Up     3.0 Up Up Down Down
-#   1.3 Continue     1.9 Jawbreaker    2.5 Quicksave
-#   1.4 Dead Air     2.0 Killswitch    2.6 Respawn
-#   1.5 Extra Life   2.1 Level Up      2.7 Final Boss
+#   1.0 - 1.2  Nosferatu       Murnau, 1922
+#   1.3        Carmilla        Sheridan Le Fanu, 1872
+#
+# Still on the table: Ruthven (Polidori, 1819), Varney (Rymer, 1845), Orlok,
+# Strigoi, Vourdalak, Empusa, Dearg-due, Draugr, Upir.
 #
 # Usage:
 #   ./script/release v1.0.0 "Nosferatu"            # build and sign
