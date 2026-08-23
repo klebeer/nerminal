@@ -1496,6 +1496,15 @@ pub(crate) fn initialize_app(
         ctx.set_zoom_factor(WindowSettings::as_ref(ctx).zoom_level.as_zoom_factor());
     }
 
+    // Secure input lives in the WindowServer and dies with the process, so the
+    // setting has to be re-asserted on every launch.
+    #[cfg(target_os = "macos")]
+    warpui::windowing::WindowManager::as_ref(ctx).set_secure_keyboard_entry(
+        *crate::settings::DevicePrivacySettings::as_ref(ctx)
+            .secure_keyboard_entry
+            .value(),
+    );
+
     let (auth_state, pending_api_key) = match launch_mode.auth_initialization() {
         AuthInitialization::Persisted => (AuthState::initialize(ctx), None),
         AuthInitialization::PendingApiKey(api_key) => (

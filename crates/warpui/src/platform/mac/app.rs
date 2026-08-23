@@ -309,6 +309,7 @@ pub unsafe extern "C-unwind" fn warp_app_will_finish_launching(this: &mut Object
 
 #[unsafe(no_mangle)]
 pub(crate) extern "C-unwind" fn warp_app_did_become_active(this: &mut Object, _: Sel, _: id) {
+    super::secure_input::set_app_active(true);
     let app = unsafe { get_app(this) };
     app.callbacks.app_became_active();
 }
@@ -459,12 +460,14 @@ pub(crate) extern "C-unwind" fn warp_app_notification_clicked(
 
 #[unsafe(no_mangle)]
 extern "C-unwind" fn warp_app_did_resign_active(this: &mut Object, _: Sel, _: id) {
+    super::secure_input::set_app_active(false);
     let app = unsafe { get_app(this) };
     app.callbacks.app_resigned_active();
 }
 
 #[unsafe(no_mangle)]
 extern "C-unwind" fn warp_app_will_terminate(this: &mut Object, _: Sel, _: id) {
+    super::secure_input::release();
     let app = unsafe { get_app(this) };
     app.callbacks.app_will_terminate();
 }

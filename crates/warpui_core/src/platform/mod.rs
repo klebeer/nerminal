@@ -574,6 +574,10 @@ pub trait WindowManager {
     /// \return if the app is currently active.
     fn app_is_active(&self) -> bool;
 
+    /// Asks the platform to stop other processes from observing keystrokes while
+    /// this app has focus. Platforms without the concept ignore it.
+    fn set_secure_keyboard_entry(&self, _enabled: bool) {}
+
     /// Makes all the app's windows visible, and transfer focus to whichever window most recently
     /// had focus.
     /// \return the window ID of the window that will become active, which may be None if we are on

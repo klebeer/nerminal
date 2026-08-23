@@ -111,6 +111,13 @@ impl platform::WindowManager for WindowManager {
         app.isActive()
     }
 
+    fn set_secure_keyboard_entry(&self, enabled: bool) {
+        // The delegate only reports activation changes, so a setting flipped while
+        // the app is already frontmost would otherwise wait for the next switch.
+        super::secure_input::set_app_active(self.app_is_active());
+        super::secure_input::set_requested(enabled);
+    }
+
     fn hide_app(&self) {
         unsafe {
             hide_app();

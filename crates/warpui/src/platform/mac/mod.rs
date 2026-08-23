@@ -11,6 +11,7 @@ mod keycode;
 mod menus;
 mod notification;
 pub(super) mod rendering;
+pub(crate) mod secure_input;
 mod text_layout;
 pub mod utils;
 mod window;

@@ -57,6 +57,7 @@ const ALL_SECTIONS: &[SettingsSection] = &[
     SettingsSection::About,
     SettingsSection::Appearance,
     SettingsSection::Keybindings,
+    SettingsSection::Privacy,
     SettingsSection::Scripting,
     SettingsSection::ShellIntegration,
     SettingsSection::AgentMCPServers,
@@ -70,6 +71,7 @@ fn all_sections_list_is_exhaustive() {
             SettingsSection::About
             | SettingsSection::Appearance
             | SettingsSection::Keybindings
+            | SettingsSection::Privacy
             | SettingsSection::Scripting
             | SettingsSection::ShellIntegration
             | SettingsSection::AgentMCPServers

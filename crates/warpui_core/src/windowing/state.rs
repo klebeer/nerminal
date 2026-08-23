@@ -83,6 +83,10 @@ impl WindowManager {
         self.platform.app_is_active()
     }
 
+    pub fn set_secure_keyboard_entry(&self, enabled: bool) {
+        self.platform.set_secure_keyboard_entry(enabled)
+    }
+
     pub fn hide_window(&self, window_id: WindowId) {
         self.platform.hide_window(window_id)
     }

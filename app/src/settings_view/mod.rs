@@ -7,6 +7,7 @@ use itertools::Itertools as _;
 use keybindings::KeybindingsView;
 use mcp_servers_page::MCPServersSettingsPageView;
 use pathfinder_geometry::vector::Vector2F;
+use privacy_page::PrivacySettingsPageView;
 use scripting_page::ScriptingSettingsPageView;
 use settings_file_footer::{SettingsFooterKind, SettingsFooterMouseStates, render_footer};
 use settings_page::{
@@ -69,6 +70,7 @@ pub mod keybindings;
 pub mod mcp_servers;
 pub mod mcp_servers_page;
 pub mod pane_manager;
+mod privacy_page;
 mod scripting_page;
 mod settings_file_footer;
 pub(crate) mod settings_page;
@@ -178,6 +180,7 @@ pub enum SettingsSection {
     Appearance,
     #[default]
     Keybindings,
+    Privacy,
     Scripting,
     ShellIntegration,
     AgentMCPServers,
@@ -221,6 +224,7 @@ impl SettingsSection {
             Self::About => "About",
             Self::Appearance => "Appearance",
             Self::Keybindings => "Keyboard shortcuts",
+            Self::Privacy => "Privacy",
             Self::Scripting => "Scripting",
             Self::ShellIntegration => "shell_integration",
             Self::AgentMCPServers => "MCP servers",
@@ -240,6 +244,7 @@ impl SettingsSection {
             "About" => Self::About,
             "Appearance" => Self::Appearance,
             "Keyboard shortcuts" => Self::Keybindings,
+            "Privacy" => Self::Privacy,
             "Scripting" => Self::Scripting,
             "shell_integration" | "Warpify" => Self::ShellIntegration,
             // "MCP Servers" named the standalone page before it moved under the
@@ -833,6 +838,7 @@ macro_rules! update_page {
             SettingsPageViewHandle::Appearance(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::Keybindings(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::ShellIntegration(handle) => $ctx.update_view(handle, $update),
+            SettingsPageViewHandle::Privacy(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::Scripting(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::CloudEnvironments(handle) => $ctx.update_view(handle, $update),
             SettingsPageViewHandle::About(handle) => $ctx.update_view(handle, $update),
@@ -875,6 +881,9 @@ impl SettingsView {
         let _global_resource_handles = GlobalResourceHandlesProvider::as_ref(ctx).get().clone();
         // About page
         let about_page_handle = ctx.add_view(AboutPageView::new);
+
+        // Privacy page
+        let privacy_page_handle = ctx.add_typed_action_view(PrivacySettingsPageView::new);
 
         // Environments page
         let environments_page_handle = ctx.add_typed_action_view(EnvironmentsPageView::new);
@@ -940,6 +949,7 @@ impl SettingsView {
         let mut settings_pages = vec![
             SettingsPage::new(appearance_page_handle),
             SettingsPage::new(keybindings_handle),
+            SettingsPage::new(privacy_page_handle),
             SettingsPage::new(shell_integration_page_handle),
         ];
 
@@ -956,6 +966,10 @@ impl SettingsView {
         // The sidebar. Everything else is configured in `~/.nerminal/settings.toml`,
         // which hot-reloads; only the pages a file cannot replace are listed here.
         let mut nav_items = vec![SettingsSection::Appearance, SettingsSection::Keybindings];
+
+        if cfg!(target_os = "macos") {
+            nav_items.push(SettingsSection::Privacy);
+        }
 
         if FeatureFlag::WarpControlCli.is_enabled() {
             nav_items.push(SettingsSection::Scripting);
@@ -1401,6 +1415,7 @@ impl SettingsView {
             SettingsPageViewHandle::Keybindings(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::About(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::ShellIntegration(v) => v.as_ref(app).should_render(app),
+            SettingsPageViewHandle::Privacy(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::Scripting(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::CloudEnvironments(v) => v.as_ref(app).should_render(app),
             SettingsPageViewHandle::MCPServers(v) => v.as_ref(app).should_render(app),

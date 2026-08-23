@@ -31,6 +31,7 @@ use super::appearance_page::AppearanceSettingsPageView;
 use super::environments_page::EnvironmentsPageView;
 use super::keybindings::KeybindingsView;
 use super::mcp_servers_page::MCPServersSettingsPageView;
+use super::privacy_page::PrivacySettingsPageView;
 use super::scripting_page::ScriptingSettingsPageView;
 use super::shell_integration_page::ShellIntegrationPageView;
 use crate::appearance::Appearance;
@@ -92,6 +93,7 @@ pub enum SettingsPageViewHandle {
     Keybindings(ViewHandle<KeybindingsView>),
     About(ViewHandle<AboutPageView>),
     ShellIntegration(ViewHandle<ShellIntegrationPageView>),
+    Privacy(ViewHandle<PrivacySettingsPageView>),
     Scripting(ViewHandle<ScriptingSettingsPageView>),
     CloudEnvironments(ViewHandle<EnvironmentsPageView>),
     MCPServers(ViewHandle<MCPServersSettingsPageView>),
@@ -105,6 +107,7 @@ impl SettingsPageViewHandle {
             Keybindings(view_handle) => ChildView::new(view_handle).finish(),
             About(view_handle) => ChildView::new(view_handle).finish(),
             ShellIntegration(view_handle) => ChildView::new(view_handle).finish(),
+            Privacy(view_handle) => ChildView::new(view_handle).finish(),
             Scripting(view_handle) => ChildView::new(view_handle).finish(),
             CloudEnvironments(view_handle) => ChildView::new(view_handle).finish(),
             MCPServers(view_handle) => ChildView::new(view_handle).finish(),
