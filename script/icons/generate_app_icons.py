@@ -671,6 +671,53 @@ def variant_bloodmoon():
     )
 
 
+# Catppuccin Mocha, from the project's published palette. Its own colours only:
+# base and crust for the ground, mauve for the accent, pink, blue and green
+# where the family usually puts neon.
+CATPPUCCIN = dict(
+    crust="#11111B", base="#1E1E2E", surface="#313244", overlay="#6C7086",
+    text="#CDD6F4", mauve="#CBA6F7", pink="#F5C2E7", blue="#89B4FA",
+    green="#A6E3A1", peach="#FAB387", red="#F38BA8",
+)
+
+
+def variant_catppuccin():
+    """The same CRT, lit in Catppuccin Mocha instead of neon."""
+    c = CATPPUCCIN
+    defs = (
+        '<linearGradient id="csky" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0%" stop-color="{c["crust"]}"/>'
+        f'<stop offset="45%" stop-color="{c["base"]}"/>'
+        f'<stop offset="78%" stop-color="{c["surface"]}"/>'
+        f'<stop offset="100%" stop-color="{c["mauve"]}"/></linearGradient>'
+        + BELOW
+        + '<radialGradient id="cmoon" cx="0.5" cy="0.4" r="0.6">'
+        f'<stop offset="0%" stop-color="{c["pink"]}"/>'
+        f'<stop offset="100%" stop-color="{c["mauve"]}"/></radialGradient>'
+    )
+    verticals = "".join(f'<line x1="256" y1="342" x2="{x}" y2="512"/>'
+                        for x in (-240, -60, 76, 176, 256, 336, 436, 572, 752))
+    horizontals = "".join(f'<line x1="0" y1="{y}" x2="512" y2="{y}"/>'
+                          for y in (356, 376, 404, 442, 492))
+    return (
+        head(defs)
+        + '<rect x="0" y="0" width="512" height="512" fill="url(#csky)"/>'
+        + '<circle cx="256" cy="196" r="150" fill="url(#cmoon)" opacity="0.55"/>'
+        + bat(112, 112, 0.8, c["crust"]) + bat(392, 88, 0.6, c["crust"])
+        + bat(430, 190, 0.45, c["crust"], "0.7")
+        + f'<rect x="0" y="338" width="512" height="5" fill="{c["mauve"]}" opacity="0.9"/>'
+        + f'<g clip-path="url(#below)" stroke="{c["mauve"]}" fill="none" opacity="0.5">'
+          f'<g stroke-width="3">{verticals}</g>'
+          f'<g stroke-width="3.5">{horizontals}</g></g>'
+        + crt(c["base"], c["mauve"], 8, c["crust"])
+        + scanlines(116, 146, 280, 168, "0.06")
+        + glasses(c["crust"], c["mauve"], c["peach"], c["text"], "0.5")
+        + prompt_mouth(c["green"])
+        + fangs(c["text"], c["pink"])
+        + TAIL
+    )
+
+
 def variant_crypt():
     """Cold stone, a gothic arch and a web in the corner."""
     defs = ('<linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">'
@@ -708,6 +755,7 @@ def variant_crypt():
 VARIANTS = {
     # The Nosferatu family: one portrait, seven nights. Blood Moon is the one
     # the app wears by default. The 80s set below it stays; the point is choice.
+    "catppuccin": variant_catppuccin,
     "dawn": variant_dawn,
     "night": variant_nosferatu,
     "shadow": variant_shadow,

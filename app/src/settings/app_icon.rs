@@ -26,6 +26,8 @@ use warp_core::settings::{SupportedPlatforms, SyncToCloud};
 )]
 pub enum AppIcon {
     #[default]
+    #[schemars(description = "Catppuccin")]
+    Catppuccin,
     #[schemars(description = "Blood Moon")]
     BloodMoon,
     #[schemars(description = "Dawn")]
@@ -59,6 +61,7 @@ pub enum AppIcon {
 impl AppIcon {
     pub fn asset_path(self) -> &'static str {
         match self {
+            AppIcon::Catppuccin => "bundled/png/nerminal-catppuccin.png",
             AppIcon::BloodMoon => "bundled/png/nerminal-bloodmoon.png",
             AppIcon::Dawn => "bundled/png/nerminal-dawn.png",
             AppIcon::Night => "bundled/png/nerminal-night.png",
@@ -78,6 +81,7 @@ impl AppIcon {
 
     pub fn display_name(self) -> &'static str {
         match self {
+            AppIcon::Catppuccin => "Catppuccin",
             AppIcon::BloodMoon => "Blood Moon",
             AppIcon::Dawn => "Dawn",
             AppIcon::Night => "Night",
@@ -105,7 +109,7 @@ impl std::fmt::Display for AppIcon {
 define_settings_group!(AppIconSettings, settings: [
     app_icon: AppIconState {
         type: AppIcon,
-        default: AppIcon::BloodMoon,
+        default: AppIcon::Catppuccin,
         supported_platforms: SupportedPlatforms::MAC,
         sync_to_cloud: SyncToCloud::Never,
         surface: settings::SettingSurfaces::GUI,
