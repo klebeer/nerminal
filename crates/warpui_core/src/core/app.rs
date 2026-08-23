@@ -217,7 +217,7 @@ impl App {
             responder_chain,
             name,
             &arg,
-            log::Level::Info,
+            log::Level::Debug,
         );
     }
 
@@ -231,7 +231,7 @@ impl App {
             window_id,
             responder_chain,
             action,
-            log::Level::Info,
+            log::Level::Debug,
         );
     }
 
@@ -1555,7 +1555,7 @@ impl AppContext {
     ) -> bool {
         if self.is_window_open(window_id) {
             let responder_chain = self.view_ancestors(window_id, view_id);
-            self.dispatch_action(window_id, &responder_chain, name, arg, log::Level::Info)
+            self.dispatch_action(window_id, &responder_chain, name, arg, log::Level::Debug)
         } else {
             false
         }
@@ -1570,7 +1570,7 @@ impl AppContext {
     ) {
         if self.is_window_open(window_id) {
             let responder_chain = self.view_ancestors(window_id, view_id);
-            self.dispatch_typed_action(window_id, &responder_chain, action, log::Level::Info);
+            self.dispatch_typed_action(window_id, &responder_chain, action, log::Level::Debug);
         }
     }
 
@@ -1648,6 +1648,10 @@ impl AppContext {
         action: &dyn Action,
         log_level: log::Level,
     ) -> bool {
+        // Debug, not info: every keystroke that clears marked text and every
+        // focus change dispatches an action, which drowned the log in tracing
+        // nobody reads. A caller that genuinely wants one at info can still ask
+        // for it through `log_level`.
         log::log!(
             log_level,
             "dispatching typed action: {}::{action:?}",
@@ -1727,7 +1731,7 @@ impl AppContext {
         arg: &dyn Any,
     ) {
         if let Some((name, mut handlers)) = self.global_actions.remove_entry(name) {
-            log::info!("dispatching global action for {}", &name);
+            log::debug!("dispatching global action for {}", &name);
             self.pending_flushes += 1;
             for handler in handlers.iter_mut().rev() {
                 handler(arg, location, self);
@@ -2045,7 +2049,7 @@ impl AppContext {
                     window_id,
                     &responder_chain[0..=i],
                     action.as_ref(),
-                    log::Level::Info,
+                    log::Level::Debug,
                 ),
                 _ => false,
             };
@@ -2164,7 +2168,7 @@ impl AppContext {
                     window_id,
                     &responder_chain[0..=i],
                     action.as_ref(),
-                    log::Level::Info,
+                    log::Level::Debug,
                 ),
                 _ => false,
             };
@@ -2202,7 +2206,7 @@ impl AppContext {
                     window_id,
                     &responder_chain[0..=i],
                     action.as_ref(),
-                    log::Level::Info,
+                    log::Level::Debug,
                 ),
             };
 
@@ -3847,7 +3851,7 @@ impl AppContext {
             _ => {
                 // Update last user action timestamp for non-hover events
                 App::record_last_active_timestamp();
-                log::Level::Info
+                log::Level::Debug
             }
         };
         let dispatch_result = presenter.borrow_mut().dispatch_event(event, self);
@@ -3862,7 +3866,7 @@ impl AppContext {
                 if let Some(app) = weak_app.upgrade() {
                     let mut app = app.borrow_mut();
                     if app.notify_tasks.remove(&timer_id).is_some() {
-                        log::info!(
+                        log::debug!(
                             "notifying view observers and updating windows for timer id {timer_id}"
                         );
                         app.notify_view_observers(window_id, view_to_notify.view_id);

@@ -1581,7 +1581,7 @@ impl Block {
             BlockState::Static => BlockState::Static,
             _ => BlockState::DoneWithNoExecution,
         };
-        log::info!("Block finished with new state {:?}", self.state);
+        log::debug!("Block finished with new state {:?}", self.state);
 
         self.block_banner = None;
 

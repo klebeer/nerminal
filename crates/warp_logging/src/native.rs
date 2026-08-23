@@ -98,7 +98,7 @@ fn format_for_terminal_output(
     let mut target_style = buf.style();
     let target = if cfg!(debug_assertions) {
         target_style.set_dimmed(true);
-        target_style.value(format!("[{}] ", record.target()))
+        target_style.value(format!("[{}] ", display_target(record.target())))
     } else {
         target_style.value(String::default())
     };
@@ -112,13 +112,44 @@ fn format_for_terminal_output(
     )
 }
 
+/// The crates are still named `warp*` in Cargo.toml, because renaming them
+/// churns every path in the tree for no functional gain. Their module paths
+/// reach the log as `warp::…`, so the crate segment is relabelled on the way
+/// out.
+///
+/// Longest prefix first, so `warpui_core` is not caught by the `warpui` rule.
+///
+/// `warp_core` is deliberately absent. Mapping it to `nerminal_core` as well
+/// would give two different crates the same name in the log, and a reader
+/// could no longer tell which file a line came from. Renaming has to stay
+/// one-to-one to be worth anything.
+const TARGET_PREFIXES: &[(&str, &str)] = &[
+    ("warpui_core", "nerminal_core"),
+    ("warpui", "nerminal_ui"),
+    ("warp", "nerminal"),
+];
+
+fn display_target(target: &str) -> std::borrow::Cow<'_, str> {
+    for (from, to) in TARGET_PREFIXES {
+        if target == *from {
+            return (*to).into();
+        }
+        if let Some(rest) = target.strip_prefix(*from)
+            && rest.starts_with("::")
+        {
+            return format!("{to}{rest}").into();
+        }
+    }
+    target.into()
+}
+
 /// Formats a log record to be output to a file.
 fn format_for_file_output(
     buf: &mut env_logger::fmt::Formatter,
     record: &log::Record,
 ) -> std::io::Result<()> {
     let target = if cfg!(debug_assertions) {
-        format!("[{}] ", record.target())
+        format!("[{}] ", display_target(record.target()))
     } else {
         String::default()
     };
@@ -734,3 +765,33 @@ pub fn init_logging_for_unit_tests() {
 #[cfg(test)]
 #[path = "native_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod display_target_tests {
+    use super::display_target;
+
+    #[test]
+    fn the_crates_are_relabelled() {
+        assert_eq!(display_target("warp::resource_limits"), "nerminal::resource_limits");
+        assert_eq!(display_target("warpui_core::core::app"), "nerminal_core::core::app");
+        assert_eq!(display_target("warpui::platform::mac"), "nerminal_ui::platform::mac");
+        assert_eq!(display_target("warp"), "nerminal");
+        assert_eq!(display_target("warpui_core"), "nerminal_core");
+    }
+
+    /// `warpui_core` must not be caught by the shorter `warpui` rule, and
+    /// `warp_core` must not collide with `warpui_core`.
+    #[test]
+    fn the_mapping_stays_one_to_one() {
+        assert_eq!(display_target("warpui_core::x"), "nerminal_core::x");
+        assert_eq!(display_target("warp_core::channel"), "warp_core::channel");
+        assert_ne!(display_target("warp_core::x"), display_target("warpui_core::x"));
+    }
+
+    /// A crate that merely starts with the same letters is not a match.
+    #[test]
+    fn only_whole_crate_segments_match() {
+        assert_eq!(display_target("warpspeed::thing"), "warpspeed::thing");
+        assert_eq!(display_target("vim::mode"), "vim::mode");
+    }
+}
