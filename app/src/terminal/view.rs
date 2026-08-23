@@ -4106,7 +4106,8 @@ impl TerminalView {
         ctx.subscribe_to_model(&block_list_settings_handle, |me, _, evt, ctx| match evt {
             BlockListSettingsChangedEvent::ShowJumpToBottomOfBlockButton { .. }
             | BlockListSettingsChangedEvent::SnackbarEnabled { .. }
-            | BlockListSettingsChangedEvent::ShowBlockDividers { .. } => ctx.notify(),
+            | BlockListSettingsChangedEvent::ShowBlockDividers { .. }
+            | BlockListSettingsChangedEvent::ShowBlockHoverActions { .. } => ctx.notify(),
             BlockListSettingsChangedEvent::PreserveInputFocusOnBlockSelection { .. } => {
                 // Fires for every terminal view, so use the focus-gated variant to avoid
                 // stealing focus from another pane or Settings.
@@ -24714,7 +24715,13 @@ impl TerminalView {
             );
         }
 
-        if let Some(hovered_block_index) = self.hovered_block_index {
+        // The filter and overflow buttons that float over a block under the
+        // cursor. Off by default: they appear over the output while you are
+        // reading it, and everything they offer is in the right-click menu.
+        if let Some(hovered_block_index) = self
+            .hovered_block_index
+            .filter(|_| *BlockListSettings::as_ref(app).show_block_hover_actions.value())
+        {
             let block_list = model.block_list();
 
             // Is this block the first visible item in the viewport? If so, the tool tips should
