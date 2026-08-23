@@ -502,7 +502,7 @@ use crate::terminal::writeable_pty::{PtyIntent, PtyIntentEvent, TerminalSurface}
 use crate::terminal::{
     AudibleBell, BlockListSettings, BlockListSettingsChangedEvent, CellSizeAndWindowPadding,
     History, HistoryEntry, ShellHost, ShellLaunchData, SizeInfo, SizeUpdate, SizeUpdateReason,
-    color, element_size_at_last_frame, height_in_range_approx, heights_approx_eq,
+    color, copy_text, element_size_at_last_frame, height_in_range_approx, heights_approx_eq,
     heights_approx_gt, heights_approx_gte, prompt,
 };
 use crate::terminal::{
@@ -16705,8 +16705,8 @@ impl TerminalView {
             ctx,
         ) {
             if !selected.is_empty() {
-                ctx.clipboard()
-                    .write(ClipboardContent::plain_text(selected));
+                let cleaned = Self::clean_copied_text(selected, ctx);
+                ctx.clipboard().write(ClipboardContent::plain_text(cleaned));
             }
             return;
         }
@@ -16736,6 +16736,24 @@ impl TerminalView {
             && self.model.lock().is_alt_screen_active()
         {
             self.user_write_ctrl_c_to_pty(ctx);
+        }
+    }
+
+    /// Strips the layout a program baked into its output on the way to the
+    /// clipboard: the spaces it used to clear the rest of each row, and the left
+    /// margin every selected line shares.
+    ///
+    /// Neither is content, and both are what make a copied message need a trip
+    /// through an editor before it can be pasted anywhere.
+    fn clean_copied_text(text: String, ctx: &AppContext) -> String {
+        let trimmed = copy_text::trim_trailing_spaces(&text);
+        if *TerminalSettings::as_ref(ctx)
+            .strip_common_indent_on_copy
+            .value()
+        {
+            copy_text::strip_common_indent(&trimmed)
+        } else {
+            trimmed
         }
     }
 
@@ -21502,8 +21520,8 @@ impl TerminalView {
         });
 
         let selected_block_contents = self.selected_block_contents_as_string(entity, "\n", ctx);
-        ctx.clipboard()
-            .write(ClipboardContent::plain_text(selected_block_contents));
+        let cleaned = Self::clean_copied_text(selected_block_contents, ctx);
+        ctx.clipboard().write(ClipboardContent::plain_text(cleaned));
         self.close_context_menu(ctx, true);
     }
 
@@ -21514,8 +21532,8 @@ impl TerminalView {
             let selected_text =
                 model.selection_to_string(semantic_selection, self.is_inverted_blocklist(ctx), ctx);
             if let Some(selected_text) = selected_text {
-                ctx.clipboard()
-                    .write(ClipboardContent::plain_text(selected_text));
+                let cleaned = Self::clean_copied_text(selected_text, ctx);
+                ctx.clipboard().write(ClipboardContent::plain_text(cleaned));
             }
         }
         self.close_context_menu(ctx, true);

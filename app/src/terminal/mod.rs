@@ -36,6 +36,7 @@ mod buy_credits_banner;
 pub mod color;
 mod command_corrections_denylist;
 pub mod conversation_restoration;
+mod copy_text;
 pub mod dynamic_enum_suggestions;
 pub mod enable_auto_reload_modal;
 pub mod event;

@@ -184,6 +184,19 @@ define_settings_group!(TerminalSettings, settings: [
         toml_path: "terminal.show_terminal_zero_state_block",
         description: "Whether to show the AI zero-state block in new terminal sessions.",
     },
+    strip_common_indent_on_copy: StripCommonIndentOnCopy {
+        type: bool,
+        // On by default: the margin a program prints belongs to its layout, not
+        // to the text, and carrying it into a chat message or an editor is the
+        // thing people undo by hand. Turn it off to copy byte for byte.
+        default: true,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
+        surface: settings::SettingSurfaces::GUI,
+        private: false,
+        toml_path: "terminal.strip_common_indent_on_copy",
+        description: "Whether copying removes the left margin shared by every selected line.",
+    },
     osc52_clipboard_access: Osc52ClipboardAccessSetting {
         type: Osc52ClipboardAccess,
         default: Osc52ClipboardAccess::default(),
