@@ -76,7 +76,7 @@ use crate::terminal::settings::{
     AltScreenPadding, AltScreenPaddingMode, Spacing, SpacingMode, TerminalSettings,
 };
 use crate::terminal::{
-    BlockListSettings, ShowBlockDividers, ShowBlockHoverActions,
+    BlockListSettings, ShowBlockDividers, ShowBlockHoverActions, ShowCommandDuration,
     ShowJumpToBottomOfBlockButton, SizeInfo,
 };
 use crate::themes::theme::{self, RespectSystemTheme, SelectedSystemThemes, ThemeKind, WarpTheme};
@@ -516,6 +516,7 @@ pub enum AppearancePageAction {
     ToggleJumpToBottomOfBlockButton,
     ToggleShowBlockDividers,
     ToggleShowBlockHoverActions,
+    ToggleShowCommandDuration,
     ToggleCompactMode,
     ToggleCursorBlink,
     ToggleRespectSystemTheme,
@@ -656,6 +657,7 @@ impl TypedActionView for AppearanceSettingsPageView {
             ToggleJumpToBottomOfBlockButton => self.toggle_jump_to_bottom_of_block_button(ctx),
             ToggleShowBlockDividers => self.toggle_show_block_dividers(ctx),
             ToggleShowBlockHoverActions => self.toggle_show_block_hover_actions(ctx),
+            ToggleShowCommandDuration => self.toggle_show_command_duration(ctx),
             ToggleCompactMode => self.toggle_compact_mode(ctx),
             ToggleCursorBlink => self.toggle_cursor_blink(ctx),
             ToggleOpenWindowsAtCustomSize => self.toggle_open_windows_at_custom_size(ctx),
@@ -1466,6 +1468,7 @@ impl AppearanceSettingsPageView {
             Box::new(CompactModeWidget::default()),
             Box::new(JumpToBottomOfBlockWidget::default()),
             Box::new(ShowBlockHoverActionsWidget::default()),
+            Box::new(ShowCommandDurationWidget::default()),
         ];
         if FeatureFlag::MinimalistUI.is_enabled() {
             block_settings_widgets.push(Box::new(ShowBlockDividersWidget::default()));
@@ -2251,9 +2254,31 @@ impl AppearanceSettingsPageView {
         });
     }
 
+    pub fn toggle_show_command_duration(&mut self, ctx: &mut ViewContext<Self>) {
+        let block_list_settings = BlockListSettings::handle(ctx);
+        let new_value = {
+            !*block_list_settings
+                .as_ref(ctx)
+                .show_command_duration
+                .value()
+        };
+        ctx.update_model(&block_list_settings, move |block_list_settings, ctx| {
+            report_if_error!(
+                block_list_settings
+                    .show_command_duration
+                    .set_value(new_value, ctx)
+            );
+        });
+    }
+
     pub fn toggle_show_block_hover_actions(&mut self, ctx: &mut ViewContext<Self>) {
         let block_list_settings = BlockListSettings::handle(ctx);
-        let new_value = { !*block_list_settings.as_ref(ctx).show_block_hover_actions.value() };
+        let new_value = {
+            !*block_list_settings
+                .as_ref(ctx)
+                .show_block_hover_actions
+                .value()
+        };
         ctx.update_model(&block_list_settings, move |block_list_settings, ctx| {
             report_if_error!(
                 block_list_settings
@@ -4002,7 +4027,9 @@ impl SettingsWidget for ShowBlockHoverActionsWidget {
         appearance: &Appearance,
         app: &AppContext,
     ) -> Box<dyn Element> {
-        let enabled = BlockListSettings::as_ref(app).show_block_hover_actions.value();
+        let enabled = BlockListSettings::as_ref(app)
+            .show_block_hover_actions
+            .value();
         render_body_item::<AppearancePageAction>(
             "Show block buttons on hover".into(),
             None,
@@ -4021,6 +4048,50 @@ impl SettingsWidget for ShowBlockHoverActionsWidget {
                 .build()
                 .on_click(move |ctx, _, _| {
                     ctx.dispatch_typed_action(AppearancePageAction::ToggleShowBlockHoverActions);
+                })
+                .finish(),
+            None,
+        )
+    }
+}
+
+#[derive(Default)]
+struct ShowCommandDurationWidget {
+    switch_state: SwitchStateHandle,
+}
+
+impl SettingsWidget for ShowCommandDurationWidget {
+    type View = AppearanceSettingsPageView;
+
+    fn search_terms(&self) -> &str {
+        "show command duration execution time elapsed"
+    }
+
+    fn render(
+        &self,
+        view: &Self::View,
+        appearance: &Appearance,
+        app: &AppContext,
+    ) -> Box<dyn Element> {
+        let enabled = BlockListSettings::as_ref(app).show_command_duration.value();
+        render_body_item::<AppearancePageAction>(
+            "Show how long commands took".into(),
+            None,
+            LocalOnlyIconState::for_setting(
+                ShowCommandDuration::storage_key(),
+                ShowCommandDuration::sync_to_cloud(),
+                &mut view.local_only_icon_tooltip_states.borrow_mut(),
+                app,
+            ),
+            ToggleState::Enabled,
+            appearance,
+            appearance
+                .ui_builder()
+                .switch(self.switch_state.clone())
+                .check(*enabled)
+                .build()
+                .on_click(move |ctx, _, _| {
+                    ctx.dispatch_typed_action(AppearancePageAction::ToggleShowCommandDuration);
                 })
                 .finish(),
             None,

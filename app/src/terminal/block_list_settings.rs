@@ -55,5 +55,15 @@ define_settings_group!(BlockListSettings, settings: [
        private: false,
        toml_path: "appearance.blocks.show_block_hover_actions",
        description: "Whether to float a filter and overflow button over a block on hover.",
+   },
+   show_command_duration: ShowCommandDuration {
+       type: bool,
+       default: true,
+       supported_platforms: SupportedPlatforms::ALL,
+       sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
+       surface: settings::SettingSurfaces::GUI,
+       private: false,
+       toml_path: "appearance.blocks.show_command_duration",
+       description: "Whether to show how long each command took next to its prompt.",
    }
 ]);

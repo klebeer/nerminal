@@ -4107,7 +4107,8 @@ impl TerminalView {
             BlockListSettingsChangedEvent::ShowJumpToBottomOfBlockButton { .. }
             | BlockListSettingsChangedEvent::SnackbarEnabled { .. }
             | BlockListSettingsChangedEvent::ShowBlockDividers { .. }
-            | BlockListSettingsChangedEvent::ShowBlockHoverActions { .. } => ctx.notify(),
+            | BlockListSettingsChangedEvent::ShowBlockHoverActions { .. }
+            | BlockListSettingsChangedEvent::ShowCommandDuration { .. } => ctx.notify(),
             BlockListSettingsChangedEvent::PreserveInputFocusOnBlockSelection { .. } => {
                 // Fires for every terminal view, so use the focus-gated variant to avoid
                 // stealing focus from another pane or Settings.
@@ -24076,8 +24077,10 @@ impl TerminalView {
         sessions: &Sessions,
         padding_x: Pixels,
         tool_tip_below_button: bool,
-        appearance: &Appearance,
+        app: &AppContext,
     ) -> Box<dyn Element> {
+        let appearance = Appearance::as_ref(app);
+        let show_command_duration = *BlockListSettings::as_ref(app).show_command_duration.value();
         let terminal_theme_prompt: ColorU = appearance
             .theme()
             .sub_text_color(appearance.theme().background())
@@ -24095,7 +24098,10 @@ impl TerminalView {
         let mut label_row = Flex::row().with_child(prompt);
 
         let is_live = Self::is_block_duration_live(model, index);
-        if let Some(duration_string) = Self::block_duration_text(model, index) {
+        let duration_text = show_command_duration
+            .then(|| Self::block_duration_text(model, index))
+            .flatten();
+        if let Some(duration_string) = duration_text {
             let duration = Text::new_inline(
                 duration_string,
                 appearance.monospace_font_family(),
@@ -24151,7 +24157,7 @@ impl TerminalView {
             } else {
                 duration
             });
-        } else if Self::is_block_executing(model, index) {
+        } else if show_command_duration && Self::is_block_executing(model, index) {
             // Block is executing but less than 1 second has elapsed — no duration
             // text to show yet. Add an invisible LiveElement to kick off the
             // repaint timer so the counter appears as soon as 1s elapses.
@@ -24598,7 +24604,7 @@ impl TerminalView {
                             sessions.as_ref(app),
                             padding_x,
                             i == 0,
-                            Appearance::as_ref(app),
+                            app,
                         );
                         // Special-case the last block so there is a reliable way to target it
                         // regardless of the length of the list.
@@ -24718,10 +24724,11 @@ impl TerminalView {
         // The filter and overflow buttons that float over a block under the
         // cursor. Off by default: they appear over the output while you are
         // reading it, and everything they offer is in the right-click menu.
-        if let Some(hovered_block_index) = self
-            .hovered_block_index
-            .filter(|_| *BlockListSettings::as_ref(app).show_block_hover_actions.value())
-        {
+        if let Some(hovered_block_index) = self.hovered_block_index.filter(|_| {
+            *BlockListSettings::as_ref(app)
+                .show_block_hover_actions
+                .value()
+        }) {
             let block_list = model.block_list();
 
             // Is this block the first visible item in the viewport? If so, the tool tips should
