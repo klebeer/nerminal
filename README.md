@@ -31,9 +31,10 @@ picker stops working while it is on.
 **The Nerd Font is embedded, not downloaded.** Glyphs render on a machine with
 nothing else installed, and nothing is fetched to make that happen.
 
-**Copying leaves the layout behind.** The spaces a program wrote to clear a row
-and the left margin it printed around its own text do not follow the text to
-the clipboard.
+**Copying leaves the padding behind.** A program that redraws its own output
+clears each row by writing spaces over it. Those spaces no longer follow the
+text to the clipboard, so a line that looked blank stops arriving as a hundred
+of them.
 
 **A long URL stays one link** even when the program that printed it split the
 address across several lines.
