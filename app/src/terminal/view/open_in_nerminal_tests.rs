@@ -53,7 +53,7 @@ fn test_any_text_file_type_supported() {
 #[test]
 fn test_unsupported_binary_file_type() {
     let result = async_io::block_on(check_openable_in_warp(
-        "cat app/assets/bundled/png/nerminal-default.png".to_string(),
+        "cat app/assets/bundled/png/nerminal-catppuccin.png".to_string(),
         Some(workspace_root().to_string_lossy().to_string()),
         TopLevelCommandCaseSensitivity::CaseInsensitive,
         EscapeChar::Backslash,
