@@ -648,6 +648,142 @@ fn test_finds_url_in_grid() {
     );
 }
 
+/// `mock_blockgrid` sizes the grid to its widest row, so every row below is kept
+/// clear of that width: a row that fills the grid triggers the terminal's own
+/// auto-wrap and sets WRAPLINE, which is not the case under test here.
+///
+/// Rows 1 and 2 are the same length and share an indent, which is what a program
+/// wrapping its own output at a fixed column looks like, and `\r\n` makes the
+/// breaks real newlines so there is no WRAPLINE flag to go by.
+const WRAPPED_URL_GRID: &str = concat!(
+    "a line wider than every row below it, so none of them fill the grid\r\n",
+    "  https://example.com/aaaaaaaa\r\n",
+    "  bbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n",
+    "  cc\r\n",
+);
+
+#[test]
+fn a_url_a_program_wrapped_itself_is_stitched_back_together() {
+    let blockgrid = mock_blockgrid(WRAPPED_URL_GRID);
+    let whole_url = Some(Link {
+        range: Point { row: 1, col: 2 }..=Point { row: 3, col: 3 },
+        is_empty: false,
+    });
+
+    // Clicking any of the three rows has to resolve to the same link, including
+    // the continuation rows, which carry no scheme of their own.
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 1, col: 5 }),
+        whole_url
+    );
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 2, col: 10 }),
+        whole_url
+    );
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 3, col: 3 }),
+        whole_url
+    );
+}
+
+#[test]
+fn a_deliberate_line_break_is_not_crossed() {
+    // The rows differ in length, so nothing suggests a fixed wrap column. Joining
+    // here would invent `https://example.com/fooand`.
+    let blockgrid = mock_blockgrid(concat!(
+        "a line wider than every row below it, so none of them fill the grid\r\n",
+        "  see https://example.com/foo\r\n",
+        "  and then do the thing\r\n",
+    ));
+
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 1, col: 10 }),
+        Some(Link {
+            range: Point { row: 1, col: 6 }..=Point { row: 1, col: 28 },
+            is_empty: false,
+        })
+    );
+}
+
+#[test]
+fn a_continuation_that_does_not_repeat_the_indent_is_not_crossed() {
+    // Same length, but the second row is indented further, so it reads as a new
+    // paragraph rather than the rest of the URL.
+    let blockgrid = mock_blockgrid(concat!(
+        "a line wider than every row below it, so none of them fill the grid\r\n",
+        "  https://example.com/aaaaaaaa\r\n",
+        "    bbbbbbbbbbbbbbbbbbbbbbbbbb\r\n",
+    ));
+
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 1, col: 5 }),
+        Some(Link {
+            range: Point { row: 1, col: 2 }..=Point { row: 1, col: 29 },
+            is_empty: false,
+        })
+    );
+}
+
+#[test]
+fn a_break_landing_on_a_separator_is_not_crossed() {
+    // Equal lengths and equal indents, but the row ends on `>`, so no token was
+    // cut in half and there is nothing to rejoin. A non-space separator is used
+    // on purpose: a trailing space would shorten the row, and then the length
+    // rule rather than this one would be what rejects the join.
+    let blockgrid = mock_blockgrid(concat!(
+        "a line wider than every row below it, so none of them fill the grid\r\n",
+        "  https://example.com/aaaaaaa>\r\n",
+        "  bbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n",
+    ));
+
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 1, col: 5 }),
+        Some(Link {
+            range: Point { row: 1, col: 2 }..=Point { row: 1, col: 28 },
+            is_empty: false,
+        })
+    );
+}
+
+/// The exact rows Claude Code produced in a narrow window, taken from the
+/// clipboard: eight rows, all 63 columns but the last, indented by two, cut
+/// mid-token, with real newlines between them.
+const REAL_NARROW_GRID: &str = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\n  https://analytics-dashboard-staging.internal.example.com/repo\r\n  rts/2026/q3/regional-breakdown/latin-america/ecuador/quito?vi\r\n  ew=detailed&groupBy=merchant_category&interval=daily&startDat\r\n  e=2026-07-01&endDate=2026-09-30&currency=USD&includeRefunds=t\r\n  rue&includeChargebacks=true&timezone=America%2FGuayaquil&sort\r\n  By=transaction_volume&sortOrder=desc&page=1&pageSize=250&expo\r\n  rtFormat=csv&sessionToken=tokentokentokentokentokentokentoken\r\n  tokentokentoken\r\n";
+
+#[test]
+fn the_real_wrapped_url_from_a_narrow_window_is_stitched_back_together() {
+    let blockgrid = mock_blockgrid(REAL_NARROW_GRID);
+
+    let first = blockgrid
+        .grid_handler
+        .url_at_point(Point { row: 1, col: 5 });
+    let last = blockgrid
+        .grid_handler
+        .url_at_point(Point { row: 8, col: 5 });
+
+    assert_eq!(
+        first, last,
+        "every row of one wrapped URL has to resolve to the same link"
+    );
+    assert_eq!(
+        first.map(|link| *link.range.end()),
+        Some(Point { row: 8, col: 16 }),
+        "the link has to reach the end of the last row"
+    );
+}
+
 #[test]
 fn test_find_url_line_wrapping() {
     let blockgrid = mock_blockgrid("abc https://goog\nle.com");

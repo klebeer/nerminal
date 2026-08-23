@@ -88,6 +88,12 @@ const MAX_LINK_PATH_FRAGMENTS: usize = 32;
 /// Max number of characters to scan for a URL.
 const URL_SCAN_CHARACTER_MAX_COUNT: usize = 1000;
 
+/// How many physical rows one wrapped URL may be stitched back together from.
+/// Generous on purpose: `URL_SCAN_CHARACTER_MAX_COUNT` is the real bound on the
+/// work, and a narrow window turns one URL into a lot of short rows. This only
+/// keeps a pathological chain from running away.
+const URL_WRAP_MAX_JOINED_ROWS: usize = 16;
+
 /// Max depth for the kitty keyboard mode stack.
 /// Per the kitty keyboard protocol, this should be
 /// bounded to prevent denial of service attacks.
@@ -737,6 +743,100 @@ impl GridHandler {
         RegexIter::new(start, end, direction, self, dfas)
     }
 
+    /// First cell of a row's content and one past its last, skipping blanks at
+    /// both ends. `None` for a row with no content.
+    ///
+    /// Deliberately not `line_length`, which counts trailing spaces as occupied:
+    /// a program that redraws its own output pads rows with spaces to erase what
+    /// was there before, and that padding is not content.
+    fn row_content_range(&self, row: usize) -> Option<(usize, usize)> {
+        let line = self.row(row)?;
+        let is_blank = |col: usize| {
+            line.get(col)
+                .is_none_or(|cell| cell.c == ' ' || cell.c == DEFAULT_CHAR)
+        };
+
+        let occupied = line.line_length();
+        let mut start = 0;
+        while start < occupied && is_blank(start) {
+            start += 1;
+        }
+        let mut end = occupied;
+        while end > start && is_blank(end - 1) {
+            end -= 1;
+        }
+
+        (start < end).then_some((start, end))
+    }
+
+    /// Where a URL cut in half by `row` resumes, if it was cut at all.
+    ///
+    /// Some programs wrap their own output instead of letting the terminal do
+    /// it, so a long URL arrives as real newlines with the continuation
+    /// indented. There is no `WRAPLINE` flag on those breaks, so the shape of
+    /// the rows has to carry the evidence, and all of it is required:
+    ///
+    /// - the row's content ends at the same column as a neighbour's, which is
+    ///   what a fixed wrap column looks like and what a deliberate line break
+    ///   almost never is
+    /// - the next row repeats this row's indentation exactly
+    /// - neither side of the break is a URL separator, so a token was cut in two
+    ///
+    /// A URL can hold no whitespace, so a break meeting all three could only
+    /// have come from wrapping.
+    fn url_wrap_resumes_on_next_row(&self, row: usize) -> Option<Point> {
+        let (indent, end) = self.row_content_range(row)?;
+
+        let ends_at_same_column = |other: usize| {
+            self.row_content_range(other)
+                .is_some_and(|(_, neighbour_end)| neighbour_end == end)
+        };
+        if !ends_at_same_column(row + 1) && !row.checked_sub(1).is_some_and(ends_at_same_column) {
+            return None;
+        }
+
+        if self
+            .row(row)?
+            .get(end - 1)
+            .is_none_or(|cell| is_url_link_separator(cell.c))
+        {
+            return None;
+        }
+
+        let next_row = row + 1;
+        let (next_indent, _) = self.row_content_range(next_row)?;
+        if next_indent != indent {
+            return None;
+        }
+        if self
+            .row(next_row)?
+            .get(next_indent)
+            .is_none_or(|cell| is_url_link_separator(cell.c))
+        {
+            return None;
+        }
+
+        Some(Point {
+            row: next_row,
+            col: next_indent,
+        })
+    }
+
+    /// The mirror of [`Self::url_wrap_resumes_on_next_row`]: the last cell of the
+    /// row that was cut, when `row` is the continuation of one.
+    fn url_wrap_ends_on_previous_row(&self, row: usize) -> Option<Point> {
+        let previous_row = row.checked_sub(1)?;
+        let resumes_at = self.url_wrap_resumes_on_next_row(previous_row)?;
+        if resumes_at.row != row {
+            return None;
+        }
+        let (_, end) = self.row_content_range(previous_row)?;
+        Some(Point {
+            row: previous_row,
+            col: end - 1,
+        })
+    }
+
     pub fn url_at_point(&self, displayed_point: Point) -> Option<Link> {
         let original_point = self.maybe_translate_point_from_displayed_to_original(displayed_point);
         let row = original_point.row;
@@ -771,25 +871,50 @@ impl GridHandler {
 
         let mut starting_point = original_point;
         let mut total_characters_scanned = 0;
+        let mut joined_rows = 0;
 
-        while let Some(item) = cursor.current_item() {
-            let current_point = item.point();
+        'backward: loop {
+            while let Some(item) = cursor.current_item() {
+                let current_point = item.point();
 
-            // If we've hit a URL boundary, great; we can continue with our logic
-            // by detecting a URL from that point
-            if is_at_boundary(item.cell()) {
+                // If we've hit a URL boundary, great; we can continue with our logic
+                // by detecting a URL from that point
+                if is_at_boundary(item.cell()) {
+                    // The indentation in front of a continuation row is not a real
+                    // boundary. Leave this row so the wrap check below gets a say.
+                    if self
+                        .row_content_range(current_point.row)
+                        .is_some_and(|(indent, _)| current_point.col < indent)
+                    {
+                        break;
+                    }
+                    break 'backward;
+                }
+
+                // Otherwise, if we've scanned behind the hovered point more than the max character
+                // limit, we know scanning forward from there won't yield a URL
+                if total_characters_scanned > URL_SCAN_CHARACTER_MAX_COUNT {
+                    return None;
+                }
+
+                starting_point = current_point;
+                total_characters_scanned += 1;
+                cursor.move_backward();
+            }
+
+            // The cursor stops at a newline. Step over it only when the rows show
+            // this URL was cut by a program wrapping its own output.
+            if joined_rows >= URL_WRAP_MAX_JOINED_ROWS {
                 break;
             }
-
-            // Otherwise, if we've scanned behind the hovered point more than the max character
-            // limit, we know scanning forward from there won't yield a URL
-            if total_characters_scanned > URL_SCAN_CHARACTER_MAX_COUNT {
-                return None;
+            match self.url_wrap_ends_on_previous_row(starting_point.row) {
+                Some(previous_end) => {
+                    joined_rows += 1;
+                    starting_point = previous_end;
+                    cursor = self.grapheme_cursor_from(previous_end, grapheme_cursor::Wrap::Soft);
+                }
+                None => break,
             }
-
-            starting_point = current_point;
-            total_characters_scanned += 1;
-            cursor.move_backward();
         }
 
         let mut cursor = self.grapheme_cursor_from(starting_point, grapheme_cursor::Wrap::Soft);
@@ -805,86 +930,121 @@ impl GridHandler {
         let mut passed_point = false;
 
         total_characters_scanned = 0;
-        while let Some(item) = cursor.current_item() {
-            // If we maxed out the number of characters we're willing to scan, then one of
-            // two scenarios happened:
-            // 1. The URL is exactly of length URL_SCAN_CHARACTER_MAX_COUNT+1, in which case we
-            //    should return it.
-            // 2. The URL is larger than URL_SCAN_CHARACTER_MAX_COUNT+1, in which case we shouldn't
-            //    return anything, because offering an incomplete link is a bad UX.
-            // It's far more likely that (2) is what happened, so break and reset the link.
-            if total_characters_scanned > URL_SCAN_CHARACTER_MAX_COUNT {
-                url = Link {
-                    range: RangeInclusive::new(Point::default(), Point::default()),
-                    is_empty: true,
-                };
-                break;
-            }
-            let current_point = item.point();
-
-            if current_point >= original_point {
-                passed_point = true;
-            }
-
-            if is_at_boundary(item.cell()) {
-                break;
-            }
-
-            let last_state = mem::replace(&mut state, locator.advance(item.cell().c));
-            let link_changed = match (state, last_state) {
-                (UrlLocation::Url(_length, _num_illegal_end_chars), UrlLocation::Scheme) => {
-                    // Create empty URL.
+        joined_rows = 0;
+        let mut last_row = starting_point.row;
+        'forward: loop {
+            while let Some(item) = cursor.current_item() {
+                // If we maxed out the number of characters we're willing to scan, then one of
+                // two scenarios happened:
+                // 1. The URL is exactly of length URL_SCAN_CHARACTER_MAX_COUNT+1, in which case we
+                //    should return it.
+                // 2. The URL is larger than URL_SCAN_CHARACTER_MAX_COUNT+1, in which case we shouldn't
+                //    return anything, because offering an incomplete link is a bad UX.
+                // It's far more likely that (2) is what happened, so break and reset the link.
+                if total_characters_scanned > URL_SCAN_CHARACTER_MAX_COUNT {
                     url = Link {
                         range: RangeInclusive::new(Point::default(), Point::default()),
                         is_empty: true,
                     };
-
-                    // Push schemes into URL.
-                    for scheme_point in &scheme_buffer {
-                        url.extend_link(*scheme_point);
-                    }
-
-                    // Push the new char into URL.
-                    url.extend_link(current_point);
-                    true
+                    break 'forward;
                 }
-                (UrlLocation::Url(_length, num_illegal_end_chars), UrlLocation::Url(..)) => {
-                    // If the last character processed is not considered an "illegal"
-                    // trailing character for a URL, extend the link up to the current
-                    // point.
-                    if num_illegal_end_chars == 0 {
+                let current_point = item.point();
+                last_row = current_point.row;
+
+                // Cells past the end of a row's content are empty rather than text,
+                // so stop reading this row and let the wrap check below have a say.
+                if self
+                    .row(current_point.row)
+                    .is_some_and(|row| current_point.col >= row.line_length())
+                {
+                    break;
+                }
+
+                if current_point >= original_point {
+                    passed_point = true;
+                }
+
+                if is_at_boundary(item.cell()) {
+                    // Blank cells past the end of a row's content are not a real
+                    // boundary. Leave this row so the wrap check below gets a say.
+                    if self
+                        .row(current_point.row)
+                        .is_some_and(|row| current_point.col >= row.line_length())
+                    {
+                        break;
+                    }
+                    break 'forward;
+                }
+
+                let last_state = mem::replace(&mut state, locator.advance(item.cell().c));
+                let link_changed = match (state, last_state) {
+                    (UrlLocation::Url(_length, _num_illegal_end_chars), UrlLocation::Scheme) => {
+                        // Create empty URL.
+                        url = Link {
+                            range: RangeInclusive::new(Point::default(), Point::default()),
+                            is_empty: true,
+                        };
+
+                        // Push schemes into URL.
+                        for scheme_point in &scheme_buffer {
+                            url.extend_link(*scheme_point);
+                        }
+
+                        // Push the new char into URL.
                         url.extend_link(current_point);
+                        true
                     }
-                    // Whether or not we actually extended the URL, continue processing
-                    // characters, as we might find a valid end character, which would
-                    // cause us to yank the end of the URL up to the current point.
-                    true
-                }
-                (UrlLocation::Scheme, _) => {
-                    scheme_buffer.push(current_point);
-                    true
-                }
-                (UrlLocation::Reset, _) => {
-                    locator = UrlLocator::new();
-                    state = UrlLocation::Reset;
-                    scheme_buffer.clear();
-                    false
-                }
-                _ => false,
-            };
+                    (UrlLocation::Url(_length, num_illegal_end_chars), UrlLocation::Url(..)) => {
+                        // If the last character processed is not considered an "illegal"
+                        // trailing character for a URL, extend the link up to the current
+                        // point.
+                        if num_illegal_end_chars == 0 {
+                            url.extend_link(current_point);
+                        }
+                        // Whether or not we actually extended the URL, continue processing
+                        // characters, as we might find a valid end character, which would
+                        // cause us to yank the end of the URL up to the current point.
+                        true
+                    }
+                    (UrlLocation::Scheme, _) => {
+                        scheme_buffer.push(current_point);
+                        true
+                    }
+                    (UrlLocation::Reset, _) => {
+                        locator = UrlLocator::new();
+                        state = UrlLocation::Reset;
+                        scheme_buffer.clear();
+                        false
+                    }
+                    _ => false,
+                };
 
-            // We are at the hovered point and link has not updated -- the point is not
-            // part of a url.
-            if current_point == original_point && !link_changed {
-                return None;
-            // Passed the hovered point and link hasn't changed -- break because all the later
-            // urls will not include the point.
-            } else if passed_point && !link_changed {
-                break;
+                // We are at the hovered point and link has not updated -- the point is not
+                // part of a url.
+                if current_point == original_point && !link_changed {
+                    return None;
+                // Passed the hovered point and link hasn't changed -- break because all the later
+                // urls will not include the point.
+                } else if passed_point && !link_changed {
+                    break 'forward;
+                }
+
+                cursor.move_forward();
+                total_characters_scanned += 1;
             }
 
-            cursor.move_forward();
-            total_characters_scanned += 1;
+            // Same as the backward scan: cross the newline only when the rows
+            // show the URL was cut by a program wrapping its own output.
+            if joined_rows >= URL_WRAP_MAX_JOINED_ROWS {
+                break;
+            }
+            match self.url_wrap_resumes_on_next_row(last_row) {
+                Some(resumes_at) => {
+                    joined_rows += 1;
+                    cursor = self.grapheme_cursor_from(resumes_at, grapheme_cursor::Wrap::Soft);
+                }
+                None => break,
+            }
         }
 
         if url.is_empty || !url.range.contains(&original_point) {

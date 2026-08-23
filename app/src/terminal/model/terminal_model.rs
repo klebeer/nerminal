@@ -1886,19 +1886,22 @@ impl TerminalModel {
         }
     }
 
-    /// A variant of [`Self::string_at_range`] for when the text is a link that
-    /// we want to open. In that case, the existence of zero-width spaces can
-    /// case a double-encode of the url when we attempt to open it (see CORE-1573).
-    /// Here, we pull the text at the given range, and then trim whitespace
-    /// (including zero-width spaces) from the end before returning the url.
+    /// A variant of [`Self::string_at_range`] for when the text is a link we want
+    /// to open.
+    ///
+    /// A URL cannot hold whitespace, so any whitespace inside the range belongs to
+    /// the layout rather than to the link: the newline and indentation a program
+    /// left behind when it wrapped its own output across rows. Zero-width spaces
+    /// go too, because they double-encode the url when it is opened.
     pub fn link_at_range<T: RangeInModel>(
         &self,
         item: &WithinModel<T>,
         respect_obfuscated_secrets: RespectObfuscatedSecrets,
     ) -> String {
-        let text = self.string_at_range(item, respect_obfuscated_secrets);
-        text.trim_matches(['\u{200B}', ' ', '\n', '\r', '\t'])
-            .to_owned()
+        self.string_at_range(item, respect_obfuscated_secrets)
+            .chars()
+            .filter(|c| *c != '\u{200B}' && !c.is_whitespace())
+            .collect()
     }
 
     /// Return all possible file paths containing the grid point ordered from longest to shortest.
