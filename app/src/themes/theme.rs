@@ -51,13 +51,21 @@ pub enum ThemeKind {
     Phenomenon,
     #[schemars(description = "Dark")]
     Dark,
-    #[default]
     #[schemars(description = "Nosferatu")]
     Nosferatu,
     #[schemars(description = "Nosferatu Light")]
     NosferatuLight,
     #[schemars(description = "Dracula")]
     Dracula,
+    #[default]
+    #[schemars(description = "Catppuccin Mocha")]
+    CatppuccinMocha,
+    #[schemars(description = "Catppuccin Macchiato")]
+    CatppuccinMacchiato,
+    #[schemars(description = "Catppuccin Frappe")]
+    CatppuccinFrappe,
+    #[schemars(description = "Catppuccin Latte")]
+    CatppuccinLatte,
     #[schemars(description = "Fancy Dracula")]
     FancyDracula,
     #[schemars(description = "Cyber Wave")]
@@ -119,6 +127,10 @@ impl std::fmt::Display for ThemeKind {
             ThemeKind::Nosferatu => "Nosferatu",
             ThemeKind::NosferatuLight => "Nosferatu Light",
             ThemeKind::Dracula => "Dracula",
+            ThemeKind::CatppuccinMocha => "Catppuccin Mocha",
+            ThemeKind::CatppuccinMacchiato => "Catppuccin Macchiato",
+            ThemeKind::CatppuccinFrappe => "Catppuccin Frappe",
+            ThemeKind::CatppuccinLatte => "Catppuccin Latte",
             ThemeKind::SolarizedDark => "Solarized Dark",
             ThemeKind::SolarizedLight => "Solarized Light",
             ThemeKind::GruvboxDark => "Gruvbox Dark",
@@ -478,6 +490,10 @@ impl WarpThemeConfig {
             (ThemeKind::Nosferatu, nosferatu()),
             (ThemeKind::NosferatuLight, nosferatu_light()),
             (ThemeKind::Dracula, dracula()),
+            (ThemeKind::CatppuccinMocha, catppuccin_mocha()),
+            (ThemeKind::CatppuccinMacchiato, catppuccin_macchiato()),
+            (ThemeKind::CatppuccinFrappe, catppuccin_frappe()),
+            (ThemeKind::CatppuccinLatte, catppuccin_latte()),
             (ThemeKind::Light, light_theme()),
         ]);
         WarpThemeConfig { theme_map }

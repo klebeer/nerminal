@@ -125,6 +125,95 @@ const DRACULA_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
     AnsiColor::from_u32(0xFFFFFFFF),
 );
 
+/// Catppuccin, from the project's own published palette: `base` for the
+/// background, `text` for the foreground, `mauve` for the accent, and its ANSI
+/// mapping verbatim. MIT, Copyright (c) 2021 Catppuccin.
+///
+/// Four flavours, one light and three dark. They are carried unmodified, so the
+/// 4.5:1 floor this fork holds its own themes to is not applied: reshaping
+/// someone else's theme to our rule would leave it named after them and no
+/// longer theirs.
+const CATPPUCCIN_LATTE_NORMAL_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x5C5F77FF),
+    AnsiColor::from_u32(0xD20F39FF),
+    AnsiColor::from_u32(0x40A02BFF),
+    AnsiColor::from_u32(0xDF8E1DFF),
+    AnsiColor::from_u32(0x1E66F5FF),
+    AnsiColor::from_u32(0xEA76CBFF),
+    AnsiColor::from_u32(0x179299FF),
+    AnsiColor::from_u32(0xACB0BEFF),
+);
+const CATPPUCCIN_LATTE_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x6C6F85FF),
+    AnsiColor::from_u32(0xDE293EFF),
+    AnsiColor::from_u32(0x49AF3DFF),
+    AnsiColor::from_u32(0xEEA02DFF),
+    AnsiColor::from_u32(0x456EFFFF),
+    AnsiColor::from_u32(0xFE85D8FF),
+    AnsiColor::from_u32(0x2D9FA8FF),
+    AnsiColor::from_u32(0xBCC0CCFF),
+);
+const CATPPUCCIN_FRAPPE_NORMAL_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x51576DFF),
+    AnsiColor::from_u32(0xE78284FF),
+    AnsiColor::from_u32(0xA6D189FF),
+    AnsiColor::from_u32(0xE5C890FF),
+    AnsiColor::from_u32(0x8CAAEEFF),
+    AnsiColor::from_u32(0xF4B8E4FF),
+    AnsiColor::from_u32(0x81C8BEFF),
+    AnsiColor::from_u32(0xA5ADCEFF),
+);
+const CATPPUCCIN_FRAPPE_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x626880FF),
+    AnsiColor::from_u32(0xE67172FF),
+    AnsiColor::from_u32(0x8EC772FF),
+    AnsiColor::from_u32(0xD9BA73FF),
+    AnsiColor::from_u32(0x7B9EF0FF),
+    AnsiColor::from_u32(0xF2A4DBFF),
+    AnsiColor::from_u32(0x5ABFB5FF),
+    AnsiColor::from_u32(0xB5BFE2FF),
+);
+const CATPPUCCIN_MACCHIATO_NORMAL_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x494D64FF),
+    AnsiColor::from_u32(0xED8796FF),
+    AnsiColor::from_u32(0xA6DA95FF),
+    AnsiColor::from_u32(0xEED49FFF),
+    AnsiColor::from_u32(0x8AADF4FF),
+    AnsiColor::from_u32(0xF5BDE6FF),
+    AnsiColor::from_u32(0x8BD5CAFF),
+    AnsiColor::from_u32(0xA5ADCBFF),
+);
+const CATPPUCCIN_MACCHIATO_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x5B6078FF),
+    AnsiColor::from_u32(0xEC7486FF),
+    AnsiColor::from_u32(0x8CCF7FFF),
+    AnsiColor::from_u32(0xE1C682FF),
+    AnsiColor::from_u32(0x78A1F6FF),
+    AnsiColor::from_u32(0xF2A9DDFF),
+    AnsiColor::from_u32(0x63CBC0FF),
+    AnsiColor::from_u32(0xB8C0E0FF),
+);
+const CATPPUCCIN_MOCHA_NORMAL_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x45475AFF),
+    AnsiColor::from_u32(0xF38BA8FF),
+    AnsiColor::from_u32(0xA6E3A1FF),
+    AnsiColor::from_u32(0xF9E2AFFF),
+    AnsiColor::from_u32(0x89B4FAFF),
+    AnsiColor::from_u32(0xF5C2E7FF),
+    AnsiColor::from_u32(0x94E2D5FF),
+    AnsiColor::from_u32(0xA6ADC8FF),
+);
+const CATPPUCCIN_MOCHA_BRIGHT_COLORS: AnsiColors = AnsiColors::new(
+    AnsiColor::from_u32(0x585B70FF),
+    AnsiColor::from_u32(0xF37799FF),
+    AnsiColor::from_u32(0x89D88BFF),
+    AnsiColor::from_u32(0xEBD391FF),
+    AnsiColor::from_u32(0x74A8FCFF),
+    AnsiColor::from_u32(0xF2AEDEFF),
+    AnsiColor::from_u32(0x6BD7CAFF),
+    AnsiColor::from_u32(0xBAC2DEFF),
+);
+
 const PHENOMENON_NORMAL_COLORS: AnsiColors = AnsiColors::new(
     AnsiColor::from_u32(0x121212FF),
     AnsiColor::from_u32(0xD22D1EFF),
@@ -188,6 +277,74 @@ pub(super) fn nosferatu_light_colors() -> TerminalColors {
 
 pub(super) fn dracula_colors() -> TerminalColors {
     TerminalColors::new(DRACULA_NORMAL_COLORS, DRACULA_BRIGHT_COLORS)
+}
+
+pub(super) fn catppuccin_latte_colors() -> TerminalColors {
+    TerminalColors::new(CATPPUCCIN_LATTE_NORMAL_COLORS, CATPPUCCIN_LATTE_BRIGHT_COLORS)
+}
+
+pub(super) fn catppuccin_latte() -> WarpTheme {
+    WarpTheme::new(
+        Fill::Solid(ColorU::from_u32(0xEFF1F5FF)),
+        ColorU::from_u32(0x4C4F69FF),
+        Fill::Solid(ColorU::from_u32(0x8839EFFF)),
+        None,
+        Some(Details::Lighter),
+        catppuccin_latte_colors(),
+        None,
+        Some("Catppuccin Latte".to_string()),
+    )
+}
+
+pub(super) fn catppuccin_frappe_colors() -> TerminalColors {
+    TerminalColors::new(CATPPUCCIN_FRAPPE_NORMAL_COLORS, CATPPUCCIN_FRAPPE_BRIGHT_COLORS)
+}
+
+pub(super) fn catppuccin_frappe() -> WarpTheme {
+    WarpTheme::new(
+        Fill::Solid(ColorU::from_u32(0x303446FF)),
+        ColorU::from_u32(0xC6D0F5FF),
+        Fill::Solid(ColorU::from_u32(0xCA9EE6FF)),
+        None,
+        Some(Details::Darker),
+        catppuccin_frappe_colors(),
+        None,
+        Some("Catppuccin Frappe".to_string()),
+    )
+}
+
+pub(super) fn catppuccin_macchiato_colors() -> TerminalColors {
+    TerminalColors::new(CATPPUCCIN_MACCHIATO_NORMAL_COLORS, CATPPUCCIN_MACCHIATO_BRIGHT_COLORS)
+}
+
+pub(super) fn catppuccin_macchiato() -> WarpTheme {
+    WarpTheme::new(
+        Fill::Solid(ColorU::from_u32(0x24273AFF)),
+        ColorU::from_u32(0xCAD3F5FF),
+        Fill::Solid(ColorU::from_u32(0xC6A0F6FF)),
+        None,
+        Some(Details::Darker),
+        catppuccin_macchiato_colors(),
+        None,
+        Some("Catppuccin Macchiato".to_string()),
+    )
+}
+
+pub(super) fn catppuccin_mocha_colors() -> TerminalColors {
+    TerminalColors::new(CATPPUCCIN_MOCHA_NORMAL_COLORS, CATPPUCCIN_MOCHA_BRIGHT_COLORS)
+}
+
+pub(super) fn catppuccin_mocha() -> WarpTheme {
+    WarpTheme::new(
+        Fill::Solid(ColorU::from_u32(0x1E1E2EFF)),
+        ColorU::from_u32(0xCDD6F4FF),
+        Fill::Solid(ColorU::from_u32(0xCBA6F7FF)),
+        None,
+        Some(Details::Darker),
+        catppuccin_mocha_colors(),
+        None,
+        Some("Catppuccin Mocha".to_string()),
+    )
 }
 
 pub(super) fn phenomenon_colors() -> TerminalColors {

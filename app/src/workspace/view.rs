@@ -11394,7 +11394,7 @@ impl Workspace {
                 self.theme_chooser_view
                     .update(ctx, |theme_chooser_view, ctx| {
                         // Fall back to the shipped theme when the current one is deleted.
-                        theme_chooser_view.select_and_save_theme(&ThemeKind::Nosferatu, ctx);
+                        theme_chooser_view.select_and_save_theme(&ThemeKind::default(), ctx);
                     });
             }
         }
