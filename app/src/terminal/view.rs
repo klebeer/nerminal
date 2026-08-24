@@ -4108,7 +4108,8 @@ impl TerminalView {
             | BlockListSettingsChangedEvent::SnackbarEnabled { .. }
             | BlockListSettingsChangedEvent::ShowBlockDividers { .. }
             | BlockListSettingsChangedEvent::ShowBlockHoverActions { .. }
-            | BlockListSettingsChangedEvent::ShowCommandDuration { .. } => ctx.notify(),
+            | BlockListSettingsChangedEvent::ShowCommandDuration { .. }
+            | BlockListSettingsChangedEvent::ShowBlockSelectionHighlight { .. } => ctx.notify(),
             BlockListSettingsChangedEvent::PreserveInputFocusOnBlockSelection { .. } => {
                 // Fires for every terminal view, so use the focus-gated variant to avoid
                 // stealing focus from another pane or Settings.
