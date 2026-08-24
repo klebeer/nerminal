@@ -39,8 +39,20 @@ of them.
 **A long URL stays one link** even when the program that printed it split the
 address across several lines.
 
-**Less on screen.** The buttons that float over a block on hover and the
-elapsed time beside each prompt can both be turned off.
+**Pick the browser that opens a link.** `terminal.link_browser` names an
+application bundle for links a program printed. Links the app owns keep going
+to the system handler.
+
+**Pick the font that fills a gap.** `appearance.text.fallback_font_family`
+names the family consulted before the system cascade, so a glyph your
+monospace font lacks is drawn by a font you chose.
+
+**Double-click works on CJK.** Fullwidth punctuation ends a word the same way
+its ASCII counterpart does, so a selection stops where you expect it to.
+
+**Less on screen.** The buttons that float over a block on hover, the elapsed
+time beside each prompt, and the highlight over a selected block can all be
+turned off.
 
 ## Credit
 
