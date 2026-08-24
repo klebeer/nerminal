@@ -2,8 +2,8 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::ops::Range;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, RwLock};
 
 use anyhow::{Result, anyhow, bail};
 use core_foundation::array::{CFArray, CFArrayRef};
@@ -189,6 +189,7 @@ pub struct FontDB {
     native_fonts: DashMap<(FontId, OrderedFloat<f32>), NativeFont>,
     cgfont_to_id: DashMap<CGFontKey, FontId>,
     fallback_fonts: DashMap<FontId, Arc<Vec<FontId>>>,
+    preferred_fallback_family: RwLock<Option<String>>,
     metrics: DashMap<FontId, Metrics>,
     font_selections: DashMap<(FamilyId, Properties), FontId>,
     space_advances: DashMap<FontId, Option<f64>>,
@@ -273,6 +274,7 @@ impl FontDB {
             native_fonts: Default::default(),
             cgfont_to_id: Default::default(),
             fallback_fonts: Default::default(),
+            preferred_fallback_family: Default::default(),
             metrics: Default::default(),
             font_selections: Default::default(),
             space_advances: Default::default(),
@@ -366,6 +368,13 @@ impl FontDB {
             .filter_map(|fontdesc| self.descriptor_to_font_id(fontdesc))
             .collect();
 
+        // The chosen family has to go in front of the platform cascade. Core
+        // Text answers from its own list first, so a family placed after it is
+        // only ever reached for glyphs nothing else on the system carries.
+        if let Some(font) = self.preferred_fallback_font_id() {
+            fallback_fonts.insert(0, font);
+        }
+
         // While .Apple Symbols Fallback is not a valid font. Apple Symbols is and it provides
         // many fallback characters. This implementation is consistent with Alacritty:
         // See: https://github.com/alacritty/crossfont/blob/d3515de22494c6fa70d84d2a9264c10097e303bd/src/darwin/mod.rs#L91
@@ -378,6 +387,59 @@ impl FontDB {
         }
 
         fallback_fonts
+    }
+
+    /// Resolves the configured fallback family against the installed families.
+    /// A name that resolves to nothing yields `None`, which leaves the cascade
+    /// exactly as the platform built it.
+    fn preferred_fallback_font_id(&self) -> Option<FontId> {
+        let family = {
+            let guard = self.preferred_fallback_family.read().ok()?;
+            guard.as_ref()?.clone()
+        };
+
+        let descriptors = Self::descriptors_for_family(&family)?;
+        descriptors.into_iter().find_map(|descriptor| {
+            // A family query Core Text cannot satisfy still comes back with a
+            // substitute descriptor, so the result is only usable once its
+            // family name is checked against the one that was asked for.
+            let is_requested_family = unsafe { FontDB::get_family_name(&descriptor) }
+                .is_some_and(|name| name.eq_ignore_ascii_case(&family));
+
+            is_requested_family
+                .then(|| self.descriptor_to_font_id(descriptor))
+                .flatten()
+        })
+    }
+
+    /// Swaps the family consulted ahead of the platform cascade, then refreshes
+    /// every cascade list already built, each of which was built against the
+    /// previous value.
+    fn apply_preferred_fallback_family(&self, family: Option<String>) {
+        let family = family.filter(|name| !name.trim().is_empty());
+        {
+            let Ok(mut current) = self.preferred_fallback_family.write() else {
+                return;
+            };
+            if *current == family {
+                return;
+            }
+            *current = family;
+        }
+
+        // Rebuilt in place rather than cleared: `select_font` only fills this
+        // map when it misses in `font_selections`, so an evicted entry would
+        // never be refilled and `fallback_fonts` would panic on the next read.
+        let font_ids: Vec<FontId> = self
+            .fallback_fonts
+            .iter()
+            .map(|entry| *entry.key())
+            .collect();
+        for font_id in font_ids {
+            let cascade =
+                self.cascade_list_for_languages(&self.font(font_id).native_font(), &["en"]);
+            self.fallback_fonts.insert(font_id, Arc::new(cascade));
+        }
     }
 
     // Get a list of CTFontDescriptors for a font family.
@@ -577,6 +639,10 @@ impl crate::platform::FontDB for FontDB {
 
     fn fallback_fonts(&self, _ch: char, font_id: FontId) -> Vec<FontId> {
         self.fallback_fonts(font_id)
+    }
+
+    fn set_preferred_fallback_family(&self, family: Option<String>) {
+        self.apply_preferred_fallback_family(family);
     }
 
     fn load_family_name_from_id(&self, id: FamilyId) -> Option<String> {

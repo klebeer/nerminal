@@ -392,6 +392,13 @@ pub trait FontDB: 'static {
     /// font is lacking a glyph for a character.
     fn fallback_fonts(&self, character: char, font_id: FontId) -> Vec<FontId>;
 
+    /// Sets a font family to consult ahead of the platform's own fallback
+    /// chain. `None`, or a family that is not installed, leaves the platform
+    /// chain as the only source of fallbacks.
+    ///
+    /// Backends that do not support this keep the default no-op.
+    fn set_preferred_fallback_family(&self, _family: Option<String>) {}
+
     /// Returns a set of metrics about the font that aren't glyph-dependent.
     fn font_metrics(&self, font_id: FontId) -> Metrics;
 

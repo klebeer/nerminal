@@ -60,11 +60,11 @@ use crate::server::telemetry::{InputUXChangeOrigin, TelemetryEvent};
 use crate::settings::app_icon::{AppIcon, AppIconSettings, ShowDockIconState};
 use crate::settings::{
     AIFontName, AISettings, AppEditorSettings, CodeSettings, CursorBlink, CursorBlinkEnabled,
-    CursorDisplayType, DEFAULT_MONOSPACE_FONT_NAME, EnforceMinimumContrast, FocusPaneOnHover,
-    FontSettings, FontSettingsChangedEvent, GPUSettings, InputBoxType, InputModeSettings,
-    InputModeState, InputSettings, InputSettingsChangedEvent, MonospaceFontName, PaneSettings,
-    ShouldDimInactivePanes, ThemeSettings, UseSystemTheme, UseThinStrokes, active_theme_kind,
-    respect_system_theme,
+    CursorDisplayType, DEFAULT_MONOSPACE_FONT_NAME, EnforceMinimumContrast, FallbackFontFamily,
+    FocusPaneOnHover, FontSettings, FontSettingsChangedEvent, GPUSettings, InputBoxType,
+    InputModeSettings, InputModeState, InputSettings, InputSettingsChangedEvent, MonospaceFontName,
+    PaneSettings, ShouldDimInactivePanes, ThemeSettings, UseSystemTheme, UseThinStrokes,
+    active_theme_kind, respect_system_theme,
 };
 use crate::terminal::block_list_viewport::InputMode;
 use crate::terminal::blockgrid_element::BlockGridElement;
@@ -564,6 +564,7 @@ pub struct AppearanceSettingsPageView {
     local_only_icon_tooltip_states: RefCell<HashMap<String, MouseStateHandle>>,
     font_size_editor: ViewHandle<EditorView>,
     line_height_editor: ViewHandle<EditorView>,
+    fallback_font_family_editor: ViewHandle<EditorView>,
     notebook_font_size_editor: ViewHandle<EditorView>,
     ai_font_family_dropdown: ViewHandle<FilterableDropdown<AppearancePageAction>>,
     new_window_columns_editor: ViewHandle<EditorView>,
@@ -956,6 +957,17 @@ impl AppearanceSettingsPageView {
                         });
                     ctx.notify();
                 }
+                FontSettingsChangedEvent::FallbackFontFamily { .. } => {
+                    let family = FontSettings::as_ref(ctx)
+                        .fallback_font_family
+                        .value()
+                        .clone();
+                    me.fallback_font_family_editor
+                        .update(ctx, move |editor, ctx| {
+                            editor.set_buffer_text(&family, ctx);
+                        });
+                    ctx.notify();
+                }
                 FontSettingsChangedEvent::UseThinStrokes { .. } => {
                     me.thin_strokes_dropdown.update(ctx, |dropdown, ctx| {
                         let thin_strokes = *FontSettings::as_ref(ctx).use_thin_strokes;
@@ -1070,6 +1082,17 @@ impl AppearanceSettingsPageView {
         let line_height_editor = Self::editor(
             |me, event, ctx| me.handle_line_editor_event(event, ctx),
             &format!("{line_height_ratio}"),
+            ui_font_size,
+            ctx,
+        );
+
+        let fallback_font_family = FontSettings::as_ref(ctx)
+            .fallback_font_family
+            .value()
+            .clone();
+        let fallback_font_family_editor = Self::editor(
+            |me, event, ctx| me.handle_fallback_font_family_editor_event(event, ctx),
+            &fallback_font_family,
             ui_font_size,
             ctx,
         );
@@ -1354,6 +1377,7 @@ impl AppearanceSettingsPageView {
             notebook_font_size_editor,
             font_size_editor,
             line_height_editor,
+            fallback_font_family_editor,
             new_window_columns_editor,
             valid_new_window_columns: true,
             new_window_rows_editor,
@@ -1503,6 +1527,7 @@ impl AppearanceSettingsPageView {
         let font_settings = FontSettings::as_ref(ctx);
         let mut text_settings_widgets: Vec<Box<dyn SettingsWidget<View = Self>>> = vec![
             Box::new(TerminalFontWidget::default()),
+            Box::new(FallbackFontWidget),
             Box::new(NotebookFontSizeWidget::default()),
         ];
         if font_settings
@@ -1798,6 +1823,30 @@ impl AppearanceSettingsPageView {
             }
             _ => {}
         }
+    }
+
+    fn handle_fallback_font_family_editor_event(
+        &mut self,
+        event: &EditorEvent,
+        ctx: &mut ViewContext<Self>,
+    ) {
+        match event {
+            EditorEvent::Blurred | EditorEvent::Enter => self.set_fallback_font_family(ctx),
+            EditorEvent::Escape => ctx.emit(SettingsPageEvent::FocusModal),
+            _ => {}
+        }
+    }
+
+    fn set_fallback_font_family(&mut self, ctx: &mut ViewContext<Self>) {
+        let family = self
+            .fallback_font_family_editor
+            .as_ref(ctx)
+            .buffer_text(ctx)
+            .trim()
+            .to_string();
+        FontSettings::handle(ctx).update(ctx, |font_settings, ctx| {
+            report_if_error!(font_settings.fallback_font_family.set_value(family, ctx));
+        });
     }
 
     pub fn handle_font_size_editor_event(
@@ -4165,6 +4214,52 @@ impl SettingsWidget for ShowCommandDurationWidget {
                 })
                 .finish(),
             None,
+        )
+    }
+}
+
+struct FallbackFontWidget;
+
+impl SettingsWidget for FallbackFontWidget {
+    type View = AppearanceSettingsPageView;
+
+    fn search_terms(&self) -> &str {
+        "fallback font family missing glyphs icons symbols nerd font cjk emoji"
+    }
+
+    fn render(
+        &self,
+        view: &Self::View,
+        appearance: &Appearance,
+        app: &AppContext,
+    ) -> Box<dyn Element> {
+        render_body_item::<AppearancePageAction>(
+            "Fallback font".into(),
+            None,
+            LocalOnlyIconState::for_setting(
+                FallbackFontFamily::storage_key(),
+                FallbackFontFamily::sync_to_cloud(),
+                &mut view.local_only_icon_tooltip_states.borrow_mut(),
+                app,
+            ),
+            ToggleState::Enabled,
+            appearance,
+            appearance
+                .ui_builder()
+                .text_input(view.fallback_font_family_editor.clone())
+                .with_style(UiComponentStyles {
+                    width: Some(FONT_FAMILY_DROPDOWN_WIDTH),
+                    padding: Some(Coords::uniform(5.)),
+                    background: Some(appearance.theme().surface_2().into()),
+                    ..Default::default()
+                })
+                .build()
+                .finish(),
+            Some(
+                "Family name used for glyphs the terminal font does not have. Leave empty to use \
+                 the system fallback."
+                    .into(),
+            ),
         )
     }
 }

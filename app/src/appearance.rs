@@ -18,12 +18,12 @@ use anyhow::anyhow;
 use macos_app_icon::*;
 pub use warp_core::ui::appearance::{Appearance, AppearanceEvent};
 
-use crate::{ASSETS, font_fallback};
 use crate::settings::{
     FontSettings, FontSettingsChangedEvent, MonospaceFontSize, Settings, ThemeSettings,
     active_theme_kind,
 };
 use crate::themes::theme::{ThemeKind, WarpTheme};
+use crate::{ASSETS, font_fallback};
 
 /// Manages the state of the app-wide Appearance settings, it is responsible
 /// for 1) listening to settings changes and update the underlying Appearance
@@ -117,6 +117,9 @@ impl AppearanceManager {
                             });
                         }
                     }
+                }
+                FontSettingsChangedEvent::FallbackFontFamily { .. } => {
+                    apply_fallback_font_family(ctx);
                 }
                 _ => {}
             },
@@ -224,7 +227,6 @@ fn load_default_monospace_font_family(ctx: &mut AppContext) -> anyhow::Result<Fa
     })
 }
 
-
 fn load_default_ui_font_family(ctx: &mut AppContext) -> anyhow::Result<FamilyId> {
     warpui::fonts::Cache::handle(ctx).update(ctx, |font_cache, _| {
         let roboto = font_cache.load_family_from_bytes(
@@ -312,9 +314,25 @@ fn get_or_load_font_family(font_name: &str, ctx: &mut AppContext) -> Option<Fami
     })
 }
 
+/// Points glyph fallback at the configured family. A blank value, which is the
+/// default, restores the platform's own cascade.
+fn apply_fallback_font_family(ctx: &mut AppContext) {
+    let family = FontSettings::as_ref(ctx)
+        .fallback_font_family
+        .value()
+        .trim()
+        .to_owned();
+    let family = (!family.is_empty()).then_some(family);
+    warpui::fonts::Cache::handle(ctx).update(ctx, |font_cache, _| {
+        font_cache.set_preferred_fallback_family(family);
+    });
+}
+
 fn build_appearance(ctx: &mut AppContext) -> Appearance {
     let default_monospace_font_family = load_default_monospace_font_family(ctx)
         .expect("unable to load default monospace font family");
+
+    apply_fallback_font_family(ctx);
 
     let monospace_font_name = FontSettings::as_ref(ctx)
         .monospace_font_name
