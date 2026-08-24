@@ -1,3 +1,5 @@
+use unicode_general_category::{GeneralCategory, get_general_category};
+
 /// The default word-boundary characters.
 pub const DEFAULT_WORD_BOUNDARY_CHARS: [char; 33] = [
     '`', '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '=', '+', '[', '{', ']', '}',
@@ -31,8 +33,27 @@ pub fn split_at_next_word_start(text: &str) -> (&str, &str) {
 
 /// Default logic for determining if a character is a word separator. Word separators are
 /// whitespace or a specific set of punctuation characters.
+///
+/// Non-ASCII punctuation in the open/close/initial/final/other categories also separates words, so
+/// CJK and fullwidth punctuation such as `，` (U+FF0C) breaks a word the same way its ASCII
+/// counterpart does. The category check is restricted to non-ASCII so that ASCII selection stays
+/// governed solely by [`DEFAULT_WORD_BOUNDARY_CHARS`]. Connectors (`Pc`) and dashes (`Pd`) are
+/// excluded because they commonly appear inside identifiers.
 pub fn is_default_word_boundary(c: char) -> bool {
-    c.is_whitespace() || DEFAULT_WORD_BOUNDARY_CHARS.contains(&c)
+    if c.is_whitespace() || DEFAULT_WORD_BOUNDARY_CHARS.contains(&c) {
+        return true;
+    }
+    if c.is_ascii() {
+        return false;
+    }
+    matches!(
+        get_general_category(c),
+        GeneralCategory::OpenPunctuation
+            | GeneralCategory::ClosePunctuation
+            | GeneralCategory::InitialPunctuation
+            | GeneralCategory::FinalPunctuation
+            | GeneralCategory::OtherPunctuation
+    )
 }
 
 /// Logic for determining if a character is a subword separator.
@@ -42,3 +63,7 @@ pub fn is_default_word_boundary(c: char) -> bool {
 pub fn is_subword_boundary_char(c: char) -> bool {
     is_default_word_boundary(c) || SUBWORD_BOUNDARY_CHARS.contains(&c)
 }
+
+#[cfg(test)]
+#[path = "words_tests.rs"]
+mod tests;
