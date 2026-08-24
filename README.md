@@ -54,6 +54,15 @@ its ASCII counterpart does, so a selection stops where you expect it to.
 time beside each prompt, and the highlight over a selected block can all be
 turned off.
 
+## Recommended setup
+
+The app is only half of it. zsh with Prezto and Powerlevel10k is what gives you
+completion, syntax highlighting, and a prompt that tells you where you are, and
+a handful of brew packages cover the rest: `eza`, `zoxide`, `fzf`, `kubecolor`.
+On macOS zsh is already installed, and the Nerd Font it needs is in the app.
+
+[docs/recommended-setup.md](docs/recommended-setup.md)
+
 ## Credit
 
 A fork of [warpdotdev/warp](https://github.com/warpdotdev/warp). All credit for
