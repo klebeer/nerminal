@@ -4745,6 +4745,23 @@ impl AppContext {
         self.platform_delegate.open_url(&effective_url)
     }
 
+    /// Opens the given URL with the application bundle at `application_path`, falling back to
+    /// the default handler when that application cannot be launched.
+    pub fn open_url_with_application(&self, url: &str, application_path: &Path) {
+        let effective_url = (self.before_open_url_callback)(url, self);
+        if self
+            .platform_delegate
+            .open_url_with_application(&effective_url, application_path)
+        {
+            return;
+        }
+        log::warn!(
+            "could not open a URL with {}, falling back to the default handler",
+            application_path.display()
+        );
+        self.platform_delegate.open_url(&effective_url);
+    }
+
     pub fn system_theme(&self) -> SystemTheme {
         self.platform_delegate.system_theme()
     }

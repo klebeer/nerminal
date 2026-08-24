@@ -46,3 +46,29 @@ fn osc52_deserializes_all_variants_from_settings_value() {
 fn osc52_rejects_unknown_variant() {
     assert!(Osc52ClipboardAccess::from_file_value(&serde_json::json!("allow_all")).is_none());
 }
+
+#[test]
+fn link_browser_empty_value_means_system_default() {
+    assert_eq!(link_browser_application(""), None);
+}
+
+#[test]
+fn link_browser_blank_value_means_system_default() {
+    assert_eq!(link_browser_application("   \t "), None);
+}
+
+#[test]
+fn link_browser_resolves_an_application_bundle_path() {
+    assert_eq!(
+        link_browser_application("/Applications/Firefox.app"),
+        Some(Path::new("/Applications/Firefox.app"))
+    );
+}
+
+#[test]
+fn link_browser_trims_surrounding_whitespace() {
+    assert_eq!(
+        link_browser_application("  /Applications/Firefox.app  "),
+        Some(Path::new("/Applications/Firefox.app"))
+    );
+}

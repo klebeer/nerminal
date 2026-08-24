@@ -221,6 +221,10 @@ impl platform::Delegate for AppDelegate {
         Window::open_url(url)
     }
 
+    fn open_url_with_application(&self, url: &str, application_path: &Path) -> bool {
+        Window::open_url_with_application(url, application_path)
+    }
+
     fn open_file_path(&self, path: &Path) {
         Window::open_file_path(path);
     }

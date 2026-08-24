@@ -197,6 +197,13 @@ pub trait Delegate: 'static {
     /// Opens a URL in its default system handler and returns whether the launch request succeeded.
     fn open_url(&self, url: &str) -> bool;
 
+    /// Opens a URL with the application bundle at `application_path` and returns whether the
+    /// launch request succeeded. A platform that cannot target a specific application returns
+    /// `false`, which leaves the caller free to fall back to [`Delegate::open_url`].
+    fn open_url_with_application(&self, _url: &str, _application_path: &Path) -> bool {
+        false
+    }
+
     /// Opens an absolute file path with native system API.
     fn open_file_path(&self, path: &Path);
 

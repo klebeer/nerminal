@@ -481,6 +481,7 @@ unsafe extern "C" {
         default_directory: &NSString,
     );
     fn open_url(urlString: &NSString) -> Bool;
+    fn open_url_with_application(urlString: &NSString, applicationPath: &NSString) -> Bool;
     fn set_titlebar_height(window: &NSWindow, height: f64);
 }
 
@@ -752,6 +753,20 @@ impl Window {
     pub fn open_url(url: &str) -> bool {
         // SAFETY: `open_url` reads the string for the duration of the call.
         unsafe { open_url(&NSString::from_str(url)).as_bool() }
+    }
+
+    pub fn open_url_with_application(url: &str, application_path: &Path) -> bool {
+        let Some(application_path) = application_path.to_str() else {
+            return false;
+        };
+        // SAFETY: `open_url_with_application` reads both strings for the duration of the call.
+        unsafe {
+            open_url_with_application(
+                &NSString::from_str(url),
+                &NSString::from_str(application_path),
+            )
+            .as_bool()
+        }
     }
 
     pub fn open_file_path(path: &Path) {
