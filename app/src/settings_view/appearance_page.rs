@@ -1831,8 +1831,13 @@ impl AppearanceSettingsPageView {
         ctx: &mut ViewContext<Self>,
     ) {
         match event {
-            EditorEvent::Blurred | EditorEvent::Enter => self.set_fallback_font_family(ctx),
-            EditorEvent::Escape => ctx.emit(SettingsPageEvent::FocusModal),
+            EditorEvent::Edited(EditOrigin::UserTyped | EditOrigin::UserInitiated) => {
+                self.set_fallback_font_family(ctx);
+                ctx.notify();
+            }
+            EditorEvent::Escape | EditorEvent::Blurred | EditorEvent::Enter => {
+                ctx.emit(SettingsPageEvent::FocusModal)
+            }
             _ => {}
         }
     }
