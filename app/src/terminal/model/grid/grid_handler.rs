@@ -94,6 +94,10 @@ const URL_SCAN_CHARACTER_MAX_COUNT: usize = 1000;
 /// keeps a pathological chain from running away.
 const URL_WRAP_MAX_JOINED_ROWS: usize = 16;
 
+/// Widest leading token still read as a list marker rather than as text, in
+/// columns. Covers a bullet glyph, a dash and an item number up to `99.`.
+const MAX_LIST_MARKER_WIDTH: usize = 3;
+
 /// Max depth for the kitty keyboard mode stack.
 /// Per the kitty keyboard protocol, this should be
 /// bounded to prevent denial of service attacks.
@@ -776,22 +780,20 @@ impl GridHandler {
     /// indented. There is no `WRAPLINE` flag on those breaks, so the shape of
     /// the rows has to carry the evidence, and all of it is required:
     ///
-    /// - the row's content ends at the same column as a neighbour's, which is
-    ///   what a fixed wrap column looks like and what a deliberate line break
-    ///   almost never is
+    /// - the row ran out of room, rather than being ended on purpose
     /// - the next row repeats this row's indentation exactly
     /// - neither side of the break is a URL separator, so a token was cut in two
+    /// - the next row is a single token, because half a URL cannot contain a
+    ///   space while an entry of a list almost always does
+    /// - the next row does not open a URL of its own, which is what tells one
+    ///   wrapped address from a column of separate ones
     ///
-    /// A URL can hold no whitespace, so a break meeting all three could only
+    /// A URL can hold no whitespace, so a break meeting all five could only
     /// have come from wrapping.
     fn url_wrap_resumes_on_next_row(&self, row: usize) -> Option<Point> {
         let (indent, end) = self.row_content_range(row)?;
 
-        let ends_at_same_column = |other: usize| {
-            self.row_content_range(other)
-                .is_some_and(|(_, neighbour_end)| neighbour_end == end)
-        };
-        if !ends_at_same_column(row + 1) && !row.checked_sub(1).is_some_and(ends_at_same_column) {
+        if !self.row_ran_out_of_room(row, indent, end) {
             return None;
         }
 
@@ -804,8 +806,8 @@ impl GridHandler {
         }
 
         let next_row = row + 1;
-        let (next_indent, _) = self.row_content_range(next_row)?;
-        if next_indent != indent {
+        let (next_indent, next_end) = self.row_content_range(next_row)?;
+        if next_indent != indent && next_indent != self.row_text_indent(row, indent, end) {
             return None;
         }
         if self
@@ -816,9 +818,110 @@ impl GridHandler {
             return None;
         }
 
+        if !self.row_is_a_single_token(next_row, next_indent, next_end) {
+            return None;
+        }
+        if self.row_opens_a_url(next_row, next_indent, next_end) {
+            return None;
+        }
+
         Some(Point {
             row: next_row,
             col: next_indent,
+        })
+    }
+
+    /// Whether a row indented by `indent` and ending at `end` had run out of
+    /// room, rather than being ended on purpose.
+    ///
+    /// Two independent pieces of evidence, either of which is enough, because
+    /// each covers what the other cannot:
+    ///
+    /// A neighbour ending at the same column means a wrap column was observed
+    /// twice, and it is read off the rows themselves rather than assumed. That
+    /// is the only evidence available when a program wraps at a width narrower
+    /// than the window, but it needs two full rows, so it says nothing about a
+    /// URL that spills onto exactly one more row.
+    ///
+    /// Reaching the right edge covers that single full row. A program that
+    /// indents its output keeps the same margin on the other side, so its wrap
+    /// column sits `indent` short of the window rather than on it, and measuring
+    /// the gap against the indentation the row already shows means no guess
+    /// about how much room any particular program reserves.
+    fn row_ran_out_of_room(&self, row: usize, indent: usize, end: usize) -> bool {
+        let ends_at_same_column = |other: usize| {
+            self.row_content_range(other)
+                .is_some_and(|(_, neighbour_end)| neighbour_end == end)
+        };
+        ends_at_same_column(row + 1)
+            || row.checked_sub(1).is_some_and(ends_at_same_column)
+            || end + indent >= self.columns()
+    }
+
+    /// The column where a row's text begins once a leading list marker is
+    /// skipped, or its plain indent when there is no marker.
+    ///
+    /// A tool that prints a bullet or an item number puts it in the gutter, so
+    /// the first row of an entry starts before its own text does while the rows
+    /// it wraps onto line up with the text. Matching only the plain indent would
+    /// leave a URL on such a row permanently cut off from its continuation,
+    /// which is every first line of a Claude Code response.
+    fn row_text_indent(&self, row: usize, indent: usize, end: usize) -> usize {
+        let Some(line) = self.row(row) else {
+            return indent;
+        };
+        let is_blank = |col: usize| {
+            line.get(col)
+                .is_none_or(|cell| cell.c == ' ' || cell.c == DEFAULT_CHAR)
+        };
+
+        let Some(marker_end) = (indent..end).find(|col| is_blank(*col)) else {
+            return indent;
+        };
+        // One blank only: anything wider is alignment, and the text after it is
+        // a column of its own rather than the rest of this entry.
+        if marker_end - indent > MAX_LIST_MARKER_WIDTH
+            || marker_end + 1 >= end
+            || is_blank(marker_end + 1)
+        {
+            return indent;
+        }
+        marker_end + 1
+    }
+
+    /// Whether the content of `row` runs from its indent to its end with no
+    /// blank in between.
+    ///
+    /// The continuation of a cut URL cannot hold a space, so a row carrying one
+    /// is a line of its own. This is what tells an entry of a list apart from a
+    /// wrap: `2. 2026-07-31 - https://...` breaks into words, the second half of
+    /// an address does not.
+    fn row_is_a_single_token(&self, row: usize, indent: usize, end: usize) -> bool {
+        let Some(line) = self.row(row) else {
+            return false;
+        };
+        !(indent..end).any(|col| {
+            line.get(col)
+                .is_none_or(|cell| cell.c == ' ' || cell.c == DEFAULT_CHAR)
+        })
+    }
+
+    /// Whether the content of `row` contains a scheme separator.
+    ///
+    /// A column of separate addresses of the same length looks exactly like a
+    /// wrap by every other measure, and this is what separates them: the tail of
+    /// one URL does not start another. A tail that does carry a nested `://` is
+    /// left alone rather than joined, which is the behaviour from before URLs
+    /// were stitched at all.
+    fn row_opens_a_url(&self, row: usize, indent: usize, end: usize) -> bool {
+        let Some(line) = self.row(row) else {
+            return false;
+        };
+        let char_at = |col: usize| line.get(col).map(|cell| cell.c);
+        (indent..end.saturating_sub(2)).any(|col| {
+            char_at(col) == Some(':')
+                && char_at(col + 1) == Some('/')
+                && char_at(col + 2) == Some('/')
         })
     }
 

@@ -648,15 +648,16 @@ fn test_finds_url_in_grid() {
     );
 }
 
-/// `mock_blockgrid` sizes the grid to its widest row, so every row below is kept
-/// clear of that width: a row that fills the grid triggers the terminal's own
-/// auto-wrap and sets WRAPLINE, which is not the case under test here.
+/// `mock_blockgrid` sizes the grid to its widest row, so the first row is one
+/// column wider than the rows under test: a row that fills the grid triggers the
+/// terminal's own auto-wrap and sets WRAPLINE, which is not the case here, and a
+/// row far short of the grid reads as a deliberate break rather than a wrap.
 ///
 /// Rows 1 and 2 are the same length and share an indent, which is what a program
 /// wrapping its own output at a fixed column looks like, and `\r\n` makes the
 /// breaks real newlines so there is no WRAPLINE flag to go by.
 const WRAPPED_URL_GRID: &str = concat!(
-    "a line wider than every row below it, so none of them fill the grid\r\n",
+    "one column wider than the rest.\r\n",
     "  https://example.com/aaaaaaaa\r\n",
     "  bbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n",
     "  cc\r\n",
@@ -693,9 +694,10 @@ fn a_url_a_program_wrapped_itself_is_stitched_back_together() {
 }
 
 #[test]
-fn a_deliberate_line_break_is_not_crossed() {
-    // The rows differ in length, so nothing suggests a fixed wrap column. Joining
-    // here would invent `https://example.com/fooand`.
+fn a_break_on_a_row_with_room_to_spare_is_not_crossed() {
+    // The row stops less than halfway across the window and no neighbour ends
+    // where it does, so nothing suggests it ran out of room. Joining would
+    // invent `https://example.com/fooand`.
     let blockgrid = mock_blockgrid(concat!(
         "a line wider than every row below it, so none of them fill the grid\r\n",
         "  see https://example.com/foo\r\n",
@@ -715,10 +717,11 @@ fn a_deliberate_line_break_is_not_crossed() {
 
 #[test]
 fn a_continuation_that_does_not_repeat_the_indent_is_not_crossed() {
-    // Same length, but the second row is indented further, so it reads as a new
-    // paragraph rather than the rest of the URL.
+    // The first row does reach the edge, so only the indentation is left to go
+    // by, and the second row is indented further: a new paragraph rather than
+    // the rest of the URL.
     let blockgrid = mock_blockgrid(concat!(
-        "a line wider than every row below it, so none of them fill the grid\r\n",
+        "one column wider than the rest.\r\n",
         "  https://example.com/aaaaaaaa\r\n",
         "    bbbbbbbbbbbbbbbbbbbbbbbbbb\r\n",
     ));
@@ -736,12 +739,12 @@ fn a_continuation_that_does_not_repeat_the_indent_is_not_crossed() {
 
 #[test]
 fn a_break_landing_on_a_separator_is_not_crossed() {
-    // Equal lengths and equal indents, but the row ends on `>`, so no token was
-    // cut in half and there is nothing to rejoin. A non-space separator is used
-    // on purpose: a trailing space would shorten the row, and then the length
-    // rule rather than this one would be what rejects the join.
+    // The row reaches the edge and the indents match, but it ends on `>`, so no
+    // token was cut in half and there is nothing to rejoin. A non-space
+    // separator is used on purpose: a trailing space would shorten the row, and
+    // then the edge rule rather than this one would be what rejects the join.
     let blockgrid = mock_blockgrid(concat!(
-        "a line wider than every row below it, so none of them fill the grid\r\n",
+        "one column wider than the rest.\r\n",
         "  https://example.com/aaaaaaa>\r\n",
         "  bbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n",
     ));
@@ -754,6 +757,109 @@ fn a_break_landing_on_a_separator_is_not_crossed() {
             range: Point { row: 1, col: 2 }..=Point { row: 1, col: 28 },
             is_empty: false,
         })
+    );
+}
+
+/// Rows 1 to 3 are a numbered list: they share an indent, each is cut off a
+/// token that is not a URL separator, and the first two end at the same column,
+/// which is every measure of a wrap but one. Each row breaks into words, and
+/// half an address cannot.
+const NUMBERED_LIST_ROWS: &str = concat!(
+    "  1. 2026-08-05 - https://example.com/i?id=107633\r\n",
+    "  2. 2026-07-31 - https://example.com/i?id=105071\r\n",
+    "  3. 2026-07-09 - https://example.com/i?id=94637\r\n",
+);
+
+/// The link on row 2, ending where its own row's content ends.
+fn second_entry_link() -> Option<Link> {
+    Some(Link {
+        range: Point { row: 2, col: 18 }..=Point { row: 2, col: 48 },
+        is_empty: false,
+    })
+}
+
+#[test]
+fn a_list_in_a_wide_window_is_not_mistaken_for_a_wrap() {
+    let blockgrid = mock_blockgrid(&format!(
+        "{}{}",
+        "a row wide enough that no entry below comes anywhere near filling the grid\r\n",
+        NUMBERED_LIST_ROWS
+    ));
+
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 2, col: 25 }),
+        second_entry_link(),
+        "the link has to stop at the end of its own row"
+    );
+}
+
+#[test]
+fn a_list_that_does_reach_the_edge_is_not_mistaken_for_a_wrap() {
+    // The window is narrow enough that the entries reach the edge, so the one
+    // measure left is that they are not single tokens.
+    let blockgrid = mock_blockgrid(&format!(
+        "{}{}",
+        "one column wider than every entry listed below it..\r\n", NUMBERED_LIST_ROWS
+    ));
+
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 2, col: 25 }),
+        second_entry_link(),
+        "the link has to stop at the end of its own row"
+    );
+}
+
+#[test]
+fn a_column_of_addresses_of_one_length_is_not_mistaken_for_a_wrap() {
+    // Bare addresses, so every row is a single token of the same length at the
+    // same indent, which is the shape of a wrap by every other measure. What
+    // rejects it is that the row below opens an address of its own.
+    let blockgrid = mock_blockgrid(concat!(
+        "one column wider than the addresses below it.\r\n",
+        "  https://example.com/reports/aaaa\r\n",
+        "  https://example.com/reports/bbbb\r\n",
+    ));
+
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 1, col: 10 }),
+        Some(Link {
+            range: Point { row: 1, col: 2 }..=Point { row: 1, col: 33 },
+            is_empty: false,
+        }),
+        "the link has to stop at the end of its own row"
+    );
+}
+
+/// A URL on the first row of a Claude Code response, so that row opens with the
+/// bullet the tool prints in the left gutter and its content starts two columns
+/// before the continuation rows do.
+const BULLETED_WRAPPED_ROWS: &str = concat!(
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\n",
+    "⏺ https://example.com/reports/quarterly?workspace=platform-reliability&project=payments-gateway&environment=production&region=us-east-1&from=2026-01-01T0\r\n",
+    "  0%3A00%3A00Z&to=2026-08-31T23%3A59%3A59Z&granularity=daily&metrics=latency_p50%2Clatency_p95%2Clatency_p99%2Cerror_rate%2Cthroughput&group_by=service%2\r\n",
+    "  Cendpoint&filter=status%3Aresolved%2Cseverity%3Ap1&sort=timestamp&order=desc&page=1&per_page=100&include_annotations=true&include_deploys=true&format=j\r\n",
+    "  son&lang=es&currency=USD\r\n",
+);
+
+#[test]
+fn a_url_on_a_bulleted_row_is_stitched_back_together() {
+    let blockgrid = mock_blockgrid(BULLETED_WRAPPED_ROWS);
+
+    let rows: Vec<_> = (1..=4)
+        .map(|row| blockgrid.grid_handler.url_at_point(Point { row, col: 20 }))
+        .collect();
+
+    assert_eq!(rows[0], rows[1], "the bullet row joins the one below it");
+    assert_eq!(rows[1], rows[2], "and that one joins the next");
+    assert_eq!(
+        rows[2], rows[3],
+        "and the tail row belongs to the same link"
     );
 }
 
@@ -782,6 +888,81 @@ fn the_real_wrapped_url_from_a_narrow_window_is_stitched_back_together() {
         Some(Point { row: 8, col: 16 }),
         "the link has to reach the end of the last row"
     );
+}
+
+/// A URL long enough to wrap once and no further, in a 155 column window: the
+/// cut row is the only full one, its tail is short, and the prose above it is
+/// shorter still.
+const TWO_ROW_WRAPPED_GRID: &str = "155 columns wide, so the row below is cut one column short of the edge and nothing else on screen comes close to it xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\n  https://deel-duty.shared.deel/incidents/detail/?id=173625&view=timeline&tab=postmortem&filter=severity%3Ap1%2Cstatus%3Aresolved&from=2026-01-01T00%3A00\r\n  %3A00Z&to=2026-08-31T23%3A59%3A59Z&team=platform-reliability&service=payments-gateway&region=us-east-1\r\n";
+
+#[test]
+fn a_url_wrapped_onto_exactly_one_more_row_is_stitched_back_together() {
+    let blockgrid = mock_blockgrid(TWO_ROW_WRAPPED_GRID);
+
+    let first = blockgrid
+        .grid_handler
+        .url_at_point(Point { row: 1, col: 20 });
+    let second = blockgrid
+        .grid_handler
+        .url_at_point(Point { row: 2, col: 20 });
+
+    assert_eq!(
+        first, second,
+        "both rows of one wrapped URL have to resolve to the same link"
+    );
+    assert_eq!(
+        first.map(|link| *link.range.end()),
+        Some(Point { row: 2, col: 103 }),
+        "the link has to reach the end of the last row"
+    );
+}
+
+/// One URL over three rows, the first two of them full at 153 columns. Taken
+/// from Claude Code output, with the two token-shaped values flattened so the
+/// secret scanner has nothing to complain about.
+const THREE_ROW_WRAPPED_ROWS: &str = concat!(
+    "  https://example.com/search?q=test&category=electronics&subcategory=laptops&brand=example&model=ultrabook-pro-2026&color=space-gray&min_price=800&max_pr\r\n",
+    "  ice=2500&sort=relevance&order=desc&page=1&per_page=48&in_stock=true&free_shipping=true&rating=4&session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&utm_source=new\r\n",
+    "  sletter&utm_medium=email&utm_campaign=summer_sale_2026&utm_content=hero_banner&ref=homepage&lang=es&currency=USD&token=aaaaaaaaaaaaaaaaaa\r\n",
+);
+
+fn assert_three_rows_resolve_to_one_link(first_row: &str) {
+    let blockgrid = mock_blockgrid(&format!("{first_row}\r\n{THREE_ROW_WRAPPED_ROWS}"));
+
+    let rows: Vec<_> = (1..=3)
+        .map(|row| blockgrid.grid_handler.url_at_point(Point { row, col: 20 }))
+        .collect();
+
+    assert_eq!(
+        rows[0], rows[1],
+        "the first two rows have to resolve to the same link"
+    );
+    assert_eq!(
+        rows[1], rows[2],
+        "the tail row has to resolve to the same link"
+    );
+    assert_eq!(
+        rows[0].as_ref().map(|link| *link.range.end()),
+        Some(Point { row: 3, col: 138 }),
+        "the link has to reach the end of the last row"
+    );
+}
+
+#[test]
+fn a_url_wrapped_onto_two_more_rows_is_stitched_back_together() {
+    // The window is one column wider than the full rows, so they reach the edge.
+    assert_three_rows_resolve_to_one_link(&format!(
+        "one column wider than the two full rows below it {}",
+        "x".repeat(106)
+    ));
+}
+
+#[test]
+fn a_url_wrapped_in_a_window_far_wider_than_the_wrap_column_is_stitched_back_together() {
+    // Claude Code caps its own width, so it keeps wrapping at 153 columns in a
+    // window twice that wide and nothing here comes near the edge. Two rows
+    // ending together is the only evidence there is, and it is enough.
+    assert_three_rows_resolve_to_one_link(&"x".repeat(300));
 }
 
 #[test]
@@ -852,11 +1033,25 @@ fn test_find_url_with_delimiter() {
 
 #[test]
 fn test_find_url_line_breaks() {
+    // The first row is exactly as wide as the window, so it ran out of room and
+    // the break reads as a wrap even though it is a real newline.
     let blockgrid = mock_blockgrid("abc https://goog\r\nle.com");
     assert_eq!(
         blockgrid
             .grid_handler
             .url_at_point(Point { row: 1, col: 0 }),
+        Some(Link {
+            range: Point { row: 0, col: 4 }..=Point { row: 1, col: 5 },
+            is_empty: false
+        })
+    );
+
+    // The same break with room to spare on the first row is left alone.
+    let blockgrid = mock_blockgrid("a window with columns to spare\r\nabc https://goog\r\nle.com");
+    assert_eq!(
+        blockgrid
+            .grid_handler
+            .url_at_point(Point { row: 2, col: 0 }),
         None
     );
 }
