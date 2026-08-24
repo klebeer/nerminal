@@ -18672,7 +18672,7 @@ impl TerminalView {
                     .lock()
                     .link_at_range(url, RespectObfuscatedSecrets::No);
                 ctx.notify();
-                ctx.open_url(&uri);
+                Self::open_link_from_terminal_output(&uri, ctx);
             }
             GridHighlightedLink::Hyperlink { link, uri } if link.contains(position) => {
                 self.open_hyperlink_uri(uri, ctx);
@@ -18693,7 +18693,22 @@ impl TerminalView {
             return;
         }
         ctx.notify();
-        ctx.open_url(uri);
+        Self::open_link_from_terminal_output(uri, ctx);
+    }
+
+    /// Opens a URL that came out of a program's output, honouring `terminal.link_browser`.
+    ///
+    /// Only links the user clicked in terminal output route through this. URLs the app owns
+    /// (banners, settings, sign-in) keep going to the system default handler, so configuring a
+    /// browser here never redirects an app-initiated flow into an unexpected application.
+    fn open_link_from_terminal_output(url: &str, ctx: &mut ViewContext<Self>) {
+        let link_browser = TerminalSettings::as_ref(ctx)
+            .link_browser_application()
+            .map(Path::to_path_buf);
+        match link_browser {
+            Some(application) => ctx.open_url_with_application(url, &application),
+            None => ctx.open_url(url),
+        }
     }
 
     fn middle_click_on_grid(

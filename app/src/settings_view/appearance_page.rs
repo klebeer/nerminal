@@ -73,7 +73,7 @@ use crate::terminal::model::ObfuscateSecrets;
 use crate::terminal::model::blockgrid::BlockGrid;
 use crate::terminal::session_settings::SessionSettings;
 use crate::terminal::settings::{
-    AltScreenPadding, AltScreenPaddingMode, Spacing, SpacingMode, TerminalSettings,
+    AltScreenPadding, AltScreenPaddingMode, LinkBrowser, Spacing, SpacingMode, TerminalSettings,
 };
 use crate::terminal::{
     BlockListSettings, ShowBlockDividers, ShowBlockHoverActions, ShowBlockSelectionHighlight,
@@ -587,6 +587,7 @@ pub struct AppearanceSettingsPageView {
     available_families: HashMap<String, (Option<FamilyId>, FontType)>,
     view_font_type: FontType,
     alt_screen_padding_editor: ViewHandle<EditorView>,
+    link_browser_editor: ViewHandle<EditorView>,
     color_picker_dot_states: Vec<Vec<MouseStateHandle>>,
     directory_tab_color_delete_buttons: Vec<ViewHandle<ActionButton>>,
     header_toolbar_inline_editor: ViewHandle<HeaderToolbarInlineEditor>,
@@ -1318,6 +1319,26 @@ impl AppearanceSettingsPageView {
             me.handle_alt_screen_padding_editor_event(event, ctx);
         });
 
+        let link_browser_editor = {
+            let link_browser_editor_options = SingleLineEditorOptions {
+                text: TextOptions::ui_font_size(appearance_handle.as_ref(ctx)),
+                ..Default::default()
+            };
+            ctx.add_typed_action_view(|ctx| {
+                let mut editor = EditorView::single_line(link_browser_editor_options, ctx);
+                editor.set_placeholder_text("/Applications/Firefox.app", ctx);
+                let link_browser = TerminalSettings::as_ref(ctx).link_browser.value().clone();
+                if !link_browser.is_empty() {
+                    // Do a system edit to avoid counting this update as part of telemetry.
+                    editor.system_reset_buffer_text(&link_browser, ctx);
+                }
+                editor
+            })
+        };
+        ctx.subscribe_to_view(&link_browser_editor, |me, _, event, ctx| {
+            me.handle_link_browser_editor_event(event, ctx);
+        });
+
         // Initialize the input type radio state
         let input_type = InputSettings::as_ref(ctx).input_type(ctx);
         let input_type_radio_state = RadioButtonStateHandle::default();
@@ -1364,6 +1385,7 @@ impl AppearanceSettingsPageView {
             directory_tab_color_delete_buttons: build_directory_delete_buttons(ctx),
             header_toolbar_inline_editor,
             alt_screen_padding_editor,
+            link_browser_editor,
             context_chips,
             ps1_grid_info: None,
         }
@@ -1560,6 +1582,13 @@ impl AppearanceSettingsPageView {
             vec![Box::new(AltScreenPaddingWidget::default())],
         ));
 
+        if TerminalSettings::as_ref(ctx)
+            .link_browser
+            .is_supported_on_current_platform()
+        {
+            categories.push(Category::new("Links", vec![Box::new(LinkBrowserWidget)]));
+        }
+
         PageType::new_categorized(categories, None)
     }
 
@@ -1744,6 +1773,27 @@ impl AppearanceSettingsPageView {
             }
             EditorEvent::Escape | EditorEvent::Blurred | EditorEvent::Enter => {
                 self.set_alt_screen_padding_editor_text(ctx);
+                ctx.emit(SettingsPageEvent::FocusModal)
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_link_browser_editor_event(
+        &mut self,
+        event: &EditorEvent,
+        ctx: &mut ViewContext<Self>,
+    ) {
+        match event {
+            EditorEvent::Edited(EditOrigin::UserTyped | EditOrigin::UserInitiated) => {
+                let buffer_text = self.link_browser_editor.as_ref(ctx).buffer_text(ctx);
+                let new_value = buffer_text.trim().to_string();
+                TerminalSettings::handle(ctx).update(ctx, |terminal_settings, ctx| {
+                    report_if_error!(terminal_settings.link_browser.set_value(new_value, ctx));
+                });
+                ctx.notify();
+            }
+            EditorEvent::Escape | EditorEvent::Blurred | EditorEvent::Enter => {
                 ctx.emit(SettingsPageEvent::FocusModal)
             }
             _ => {}
@@ -5482,6 +5532,54 @@ impl SettingsWidget for AltScreenPaddingWidget {
             column.add_child(render_group([editor_row], appearance));
         }
         column.finish()
+    }
+}
+
+struct LinkBrowserWidget;
+
+impl SettingsWidget for LinkBrowserWidget {
+    type View = AppearanceSettingsPageView;
+
+    fn search_terms(&self) -> &str {
+        "link browser open links default browser application"
+    }
+
+    fn render(
+        &self,
+        view: &Self::View,
+        appearance: &Appearance,
+        app: &AppContext,
+    ) -> Box<dyn Element> {
+        let editor_style = UiComponentStyles {
+            width: Some(220.),
+            padding: Some(Coords::uniform(5.)),
+            background: Some(appearance.theme().surface_2().into()),
+            ..Default::default()
+        };
+
+        render_body_item::<AppearancePageAction>(
+            "Open links with".into(),
+            None,
+            LocalOnlyIconState::for_setting(
+                LinkBrowser::storage_key(),
+                LinkBrowser::sync_to_cloud(),
+                &mut view.local_only_icon_tooltip_states.borrow_mut(),
+                app,
+            ),
+            ToggleState::Enabled,
+            appearance,
+            appearance
+                .ui_builder()
+                .text_input(view.link_browser_editor.clone())
+                .with_style(editor_style)
+                .build()
+                .finish(),
+            Some(
+                "Absolute path to an application bundle, such as /Applications/Firefox.app. \
+                 Leave empty to use the system default browser."
+                    .into(),
+            ),
+        )
     }
 }
 

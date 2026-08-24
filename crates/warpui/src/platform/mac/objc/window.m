@@ -1058,6 +1058,47 @@ BOOL open_url(NSString *urlString) {
     return [[NSWorkspace sharedWorkspace] openURL:url];
 }
 
+// Open a given url with the application bundle at applicationPath. Returns NO when the request
+// cannot even be made, so the caller can fall back to the default handler.
+BOOL open_url_with_application(NSString *urlString, NSString *applicationPath) {
+    NSURL *url = [NSURL URLWithString:urlString];
+    if (url == nil) {
+        return NO;
+    }
+
+    NSString *path = [applicationPath stringByExpandingTildeInPath];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        return NO;
+    }
+    NSURL *applicationURL = [NSURL fileURLWithPath:path];
+    if (applicationURL == nil) {
+        return NO;
+    }
+
+    if (@available(macOS 10.15, *)) {
+        NSWorkspaceOpenConfiguration *configuration = [NSWorkspaceOpenConfiguration configuration];
+        [[NSWorkspace sharedWorkspace] openURLs:@[ url ]
+                           withApplicationAtURL:applicationURL
+                                  configuration:configuration
+                              completionHandler:^(NSRunningApplication *application,
+                                                  NSError *error) {
+                                (void)application;
+                                if (error == nil) {
+                                    return;
+                                }
+                                // A launch failure only surfaces here, long after this function
+                                // has returned YES, so the fallback has to happen in the block
+                                // rather than in the caller.
+                                dispatch_async(dispatch_get_main_queue(), ^{
+                                  [[NSWorkspace sharedWorkspace] openURL:url];
+                                });
+                              }];
+        return YES;
+    }
+
+    return NO;
+}
+
 void hide_app() {
     NSApplication *app = [NSApplication sharedApplication];
 

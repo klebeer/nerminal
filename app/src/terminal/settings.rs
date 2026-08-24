@@ -1,6 +1,8 @@
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 use settings::macros::define_settings_group;
-use settings::{RespectUserSyncSetting, SupportedPlatforms, SyncToCloud};
+use settings::{RespectUserSyncSetting, Setting, SupportedPlatforms, SyncToCloud};
 use warp_core::features::FeatureFlag;
 use warpui::units::Pixels;
 use warpui::{AppContext, SingletonEntity};
@@ -207,6 +209,16 @@ define_settings_group!(TerminalSettings, settings: [
         toml_path: "terminal.osc52_clipboard_access",
         description: "Controls whether terminal programs can access the system clipboard via OSC 52 escape sequences. Options: deny (default), write_only, read_write.",
     },
+    link_browser: LinkBrowser {
+        type: String,
+        default: String::new(),
+        supported_platforms: SupportedPlatforms::MAC,
+        sync_to_cloud: SyncToCloud::Never,
+        surface: settings::SettingSurfaces::GUI,
+        private: false,
+        toml_path: "terminal.link_browser",
+        description: "Absolute path to the application bundle that opens links clicked in terminal output, for example /Applications/Firefox.app. Leave empty to use the system default browser.",
+    },
     // Opt-in toggle for running terminal find on a background thread. Only consulted on
     // channels where `FeatureFlag::AsyncFind` is off; channels with the flag on force the
     // feature on and hide this toggle. See `is_async_find_enabled` for the composite check.
@@ -222,7 +234,20 @@ define_settings_group!(TerminalSettings, settings: [
     },
 ]);
 
+/// Resolves the configured `terminal.link_browser` value to an application bundle. A blank
+/// value, which is the default, resolves to `None` and therefore to the system default browser.
+fn link_browser_application(configured: &str) -> Option<&Path> {
+    let configured = configured.trim();
+    (!configured.is_empty()).then(|| Path::new(configured))
+}
+
 impl TerminalSettings {
+    /// The application that should open a link clicked in terminal output, or `None` when the
+    /// system default browser should handle it.
+    pub fn link_browser_application(&self) -> Option<&Path> {
+        link_browser_application(self.link_browser.value())
+    }
+
     /// Spacing for the terminal blocks.
     pub fn terminal_spacing(&self, line_height_ratio: f32, ctx: &AppContext) -> TerminalSpacing {
         match *self.spacing_mode {
