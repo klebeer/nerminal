@@ -42,7 +42,7 @@ ICO_SIZES = (16, 32, 48, 64, 128, 256)
 # The variant the app itself wears. Must match `AppIcon`'s `#[default]` in
 # app/src/settings/app_icon.rs, or the dock shows one icon and the picker
 # claims another.
-DEFAULT_VARIANT = "catppuccin"
+DEFAULT_VARIANT = "ruthven"
 
 
 def render(svg: pathlib.Path, out: pathlib.Path, size: int) -> None:

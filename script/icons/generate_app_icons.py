@@ -718,6 +718,90 @@ def variant_catppuccin():
     )
 
 
+def monocle(lens_fill, rim, glint, chain):
+    """The aristocrat's eyepiece: one lens, one bare socket, a hanging chain.
+
+    Polidori's Ruthven is read by his face rather than by fangs, so the eyes do
+    the work here: a gold-rimmed monocle on one side and the dead grey eye on
+    the other, where every other variant has a matched pair of lenses.
+    """
+    return f'''
+      <g>
+        <circle cx="190" cy="204" r="44" fill="{lens_fill}"/>
+        <circle cx="190" cy="204" r="44" fill="none" stroke="{rim}"
+                stroke-width="4" opacity="0.35"/>
+        <circle cx="190" cy="204" r="15" fill="{glint}" opacity="0.75"/>
+        <circle cx="322" cy="204" r="48" fill="{lens_fill}"/>
+        <g fill="none" stroke="{rim}">
+          <circle cx="322" cy="204" r="48" stroke-width="10"/>
+          <circle cx="322" cy="204" r="40" stroke-width="3" opacity="0.55"/>
+        </g>
+        <path d="M364 230 q18 30 4 60 q-10 22 10 40" fill="none" stroke="{chain}"
+              stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+        <g stroke="{glint}" stroke-width="9" stroke-linecap="round" opacity="0.45">
+          <line x1="302" y1="190" x2="326" y2="172"/>
+        </g>
+      </g>'''
+
+
+def cravat(linen, knot):
+    """Court dress at the throat, on the stand every variant already has.
+
+    It starts below y=340 because the canines hang to y=334 and a collar drawn
+    any higher reads as a bib rather than as dress.
+    """
+    return f'''
+      <g>
+        <path d="M234 346 q22 18 44 0 l9 34 q-31 12 -62 0 z" fill="{linen}"
+              opacity="0.9"/>
+        <path d="M256 362 l-9 20 h18 z" fill="{knot}" opacity="0.85"/>
+      </g>'''
+
+
+def variant_ruthven():
+    """Polidori, 1819: the first aristocrat to be a vampire, and the reason
+    every vampire since has had manners.
+
+    Catppuccin Mocha throughout, exactly as `variant_catppuccin` lights it. The
+    only thing that changes is the face: a monocle and a collar where the rest
+    of the family wears a matched pair of lenses.
+    """
+    c = CATPPUCCIN
+    defs = (
+        '<linearGradient id="rsky" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0%" stop-color="{c["crust"]}"/>'
+        f'<stop offset="45%" stop-color="{c["base"]}"/>'
+        f'<stop offset="78%" stop-color="{c["surface"]}"/>'
+        f'<stop offset="100%" stop-color="{c["mauve"]}"/></linearGradient>'
+        + BELOW
+        + '<radialGradient id="rmoon" cx="0.5" cy="0.4" r="0.6">'
+        f'<stop offset="0%" stop-color="{c["pink"]}"/>'
+        f'<stop offset="100%" stop-color="{c["mauve"]}"/></radialGradient>'
+    )
+    verticals = "".join(f'<line x1="256" y1="342" x2="{x}" y2="512"/>'
+                        for x in (-240, -60, 76, 176, 256, 336, 436, 572, 752))
+    horizontals = "".join(f'<line x1="0" y1="{y}" x2="512" y2="{y}"/>'
+                          for y in (356, 376, 404, 442, 492))
+    return (
+        head(defs)
+        + '<rect x="0" y="0" width="512" height="512" fill="url(#rsky)"/>'
+        + '<circle cx="256" cy="196" r="150" fill="url(#rmoon)" opacity="0.55"/>'
+        + bat(112, 112, 0.8, c["crust"]) + bat(392, 88, 0.6, c["crust"])
+        + bat(430, 190, 0.45, c["crust"], "0.7")
+        + f'<rect x="0" y="338" width="512" height="5" fill="{c["mauve"]}" opacity="0.9"/>'
+        + f'<g clip-path="url(#below)" stroke="{c["mauve"]}" fill="none" opacity="0.5">'
+          f'<g stroke-width="3">{verticals}</g>'
+          f'<g stroke-width="3.5">{horizontals}</g></g>'
+        + crt(c["base"], c["mauve"], 8, c["crust"])
+        + scanlines(116, 146, 280, 168, "0.06")
+        + monocle(c["crust"], c["mauve"], c["text"], c["peach"])
+        + prompt_mouth(c["green"])
+        + fangs(c["text"], c["pink"])
+        + cravat(c["text"], c["surface"])
+        + TAIL
+    )
+
+
 def variant_crypt():
     """Cold stone, a gothic arch and a web in the corner."""
     defs = ('<linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">'
@@ -756,6 +840,7 @@ VARIANTS = {
     # The Nosferatu family: one portrait, seven nights. Blood Moon is the one
     # the app wears by default. The 80s set below it stays; the point is choice.
     "catppuccin": variant_catppuccin,
+    "ruthven": variant_ruthven,
     "dawn": variant_dawn,
     "night": variant_nosferatu,
     "shadow": variant_shadow,
