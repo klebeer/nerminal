@@ -436,6 +436,15 @@ impl Cache {
         )
     }
 
+    /// Points glyph fallback at `family` ahead of the platform's own cascade.
+    /// `None`, or a family that is not installed, restores the platform cascade.
+    pub fn set_preferred_fallback_family(&self, family: Option<String>) {
+        self.platform.set_preferred_fallback_family(family);
+        // Each entry records the font a character resolved to, fallbacks
+        // included, so every answer cached under the previous family is stale.
+        self.glyphs_by_char.clear();
+    }
+
     /// Checks for a matching glyph in the system fallback fonts.
     fn system_font_fallback(&self, ch: char, font: FontId) -> Option<(GlyphId, FontId)> {
         self.platform
