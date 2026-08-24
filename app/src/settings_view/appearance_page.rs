@@ -76,8 +76,8 @@ use crate::terminal::settings::{
     AltScreenPadding, AltScreenPaddingMode, Spacing, SpacingMode, TerminalSettings,
 };
 use crate::terminal::{
-    BlockListSettings, ShowBlockDividers, ShowBlockHoverActions, ShowCommandDuration,
-    ShowJumpToBottomOfBlockButton, SizeInfo,
+    BlockListSettings, ShowBlockDividers, ShowBlockHoverActions, ShowBlockSelectionHighlight,
+    ShowCommandDuration, ShowJumpToBottomOfBlockButton, SizeInfo,
 };
 use crate::themes::theme::{self, RespectSystemTheme, SelectedSystemThemes, ThemeKind, WarpTheme};
 use crate::themes::theme_chooser::ThemeChooserMode;
@@ -517,6 +517,7 @@ pub enum AppearancePageAction {
     ToggleShowBlockDividers,
     ToggleShowBlockHoverActions,
     ToggleShowCommandDuration,
+    ToggleShowBlockSelectionHighlight,
     ToggleCompactMode,
     ToggleCursorBlink,
     ToggleRespectSystemTheme,
@@ -658,6 +659,7 @@ impl TypedActionView for AppearanceSettingsPageView {
             ToggleShowBlockDividers => self.toggle_show_block_dividers(ctx),
             ToggleShowBlockHoverActions => self.toggle_show_block_hover_actions(ctx),
             ToggleShowCommandDuration => self.toggle_show_command_duration(ctx),
+            ToggleShowBlockSelectionHighlight => self.toggle_show_block_selection_highlight(ctx),
             ToggleCompactMode => self.toggle_compact_mode(ctx),
             ToggleCursorBlink => self.toggle_cursor_blink(ctx),
             ToggleOpenWindowsAtCustomSize => self.toggle_open_windows_at_custom_size(ctx),
@@ -1469,6 +1471,7 @@ impl AppearanceSettingsPageView {
             Box::new(JumpToBottomOfBlockWidget::default()),
             Box::new(ShowBlockHoverActionsWidget::default()),
             Box::new(ShowCommandDurationWidget::default()),
+            Box::new(ShowBlockSelectionHighlightWidget::default()),
         ];
         if FeatureFlag::MinimalistUI.is_enabled() {
             block_settings_widgets.push(Box::new(ShowBlockDividersWidget::default()));
@@ -2266,6 +2269,23 @@ impl AppearanceSettingsPageView {
             report_if_error!(
                 block_list_settings
                     .show_command_duration
+                    .set_value(new_value, ctx)
+            );
+        });
+    }
+
+    pub fn toggle_show_block_selection_highlight(&mut self, ctx: &mut ViewContext<Self>) {
+        let block_list_settings = BlockListSettings::handle(ctx);
+        let new_value = {
+            !*block_list_settings
+                .as_ref(ctx)
+                .show_block_selection_highlight
+                .value()
+        };
+        ctx.update_model(&block_list_settings, move |block_list_settings, ctx| {
+            report_if_error!(
+                block_list_settings
+                    .show_block_selection_highlight
                     .set_value(new_value, ctx)
             );
         });
@@ -4092,6 +4112,54 @@ impl SettingsWidget for ShowCommandDurationWidget {
                 .build()
                 .on_click(move |ctx, _, _| {
                     ctx.dispatch_typed_action(AppearancePageAction::ToggleShowCommandDuration);
+                })
+                .finish(),
+            None,
+        )
+    }
+}
+
+#[derive(Default)]
+struct ShowBlockSelectionHighlightWidget {
+    switch_state: SwitchStateHandle,
+}
+
+impl SettingsWidget for ShowBlockSelectionHighlightWidget {
+    type View = AppearanceSettingsPageView;
+
+    fn search_terms(&self) -> &str {
+        "show block selection highlight selected background border"
+    }
+
+    fn render(
+        &self,
+        view: &Self::View,
+        appearance: &Appearance,
+        app: &AppContext,
+    ) -> Box<dyn Element> {
+        let enabled = BlockListSettings::as_ref(app)
+            .show_block_selection_highlight
+            .value();
+        render_body_item::<AppearancePageAction>(
+            "Highlight the selected block".into(),
+            None,
+            LocalOnlyIconState::for_setting(
+                ShowBlockSelectionHighlight::storage_key(),
+                ShowBlockSelectionHighlight::sync_to_cloud(),
+                &mut view.local_only_icon_tooltip_states.borrow_mut(),
+                app,
+            ),
+            ToggleState::Enabled,
+            appearance,
+            appearance
+                .ui_builder()
+                .switch(self.switch_state.clone())
+                .check(*enabled)
+                .build()
+                .on_click(move |ctx, _, _| {
+                    ctx.dispatch_typed_action(
+                        AppearancePageAction::ToggleShowBlockSelectionHighlight,
+                    );
                 })
                 .finish(),
             None,

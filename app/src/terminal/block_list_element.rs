@@ -11,6 +11,7 @@ use itertools::Itertools;
 use parking_lot::FairMutex;
 use pathfinder_color::ColorU;
 use session_sharing_protocol::common::{ParticipantId, Selection};
+use settings::Setting;
 use vec1::Vec1;
 use warp_core::semantic_selection::SemanticSelection;
 use warp_core::ui::builder::UiBuilder;
@@ -71,6 +72,7 @@ use crate::settings::{
     AISettings, DebugSettings, EnforceMinimumContrast, PrivacySettings, TerminalSpacing,
 };
 use crate::terminal::alt_screen::{should_intercept_mouse, should_intercept_scroll};
+use crate::terminal::block_list_settings::BlockListSettings;
 use crate::terminal::block_list_viewport::AutoscrollBehavior;
 use crate::terminal::blockgrid_renderer::BlockGridParams;
 use crate::terminal::input::inline_menu::InlineMenuPositioner;
@@ -3765,6 +3767,9 @@ impl Element for BlockListElement {
         // Used to determine border styling of selected blocks.
         let is_singleton = self.selected_blocks.is_singleton();
         let tail_index = self.selected_blocks.tail();
+        let show_block_selection_highlight = *BlockListSettings::as_ref(app)
+            .show_block_selection_highlight
+            .value();
 
         // We use this variable to determine if we should draw a border above
         // the next block to be drawn.
@@ -3856,41 +3861,47 @@ impl Element for BlockListElement {
                         let can_be_ai_context = self.ai_render_context.borrow().is_ai_input_enabled
                             && block.can_be_ai_context(transcript_scope);
 
-                        ctx.scene
-                            .draw_rect_with_hit_recording(RectF::new(
-                                header_origin,
-                                Vector2F::new(
-                                    self.bounds
-                                        .expect("bounds must be set at paint time")
-                                        .width(),
-                                    selection_height,
-                                ),
-                            ))
-                            .with_background(if can_be_ai_context {
-                                self.warp_theme
-                                    .block_selection_as_context_background_color()
-                            } else {
-                                self.warp_theme.block_selection_color()
-                            })
-                            .with_border(
-                                Border::new(border_info.border_width)
-                                    .with_sides(
-                                        border_info.has_top_border,
-                                        true,
-                                        border_info.has_bottom_border,
-                                        true,
-                                    )
-                                    .with_border_fill(if can_be_ai_context {
-                                        self.warp_theme.block_selection_as_context_border_color()
-                                    } else {
-                                        self.warp_theme.accent()
-                                    }),
-                            );
+                        // The rect is drawn whether or not it is styled, because it is also what
+                        // registers the selected block as a hit region for mouse events.
+                        let selection_rect = ctx.scene.draw_rect_with_hit_recording(RectF::new(
+                            header_origin,
+                            Vector2F::new(
+                                self.bounds
+                                    .expect("bounds must be set at paint time")
+                                    .width(),
+                                selection_height,
+                            ),
+                        ));
+
+                        if show_block_selection_highlight {
+                            selection_rect
+                                .with_background(if can_be_ai_context {
+                                    self.warp_theme
+                                        .block_selection_as_context_background_color()
+                                } else {
+                                    self.warp_theme.block_selection_color()
+                                })
+                                .with_border(
+                                    Border::new(border_info.border_width)
+                                        .with_sides(
+                                            border_info.has_top_border,
+                                            true,
+                                            border_info.has_bottom_border,
+                                            true,
+                                        )
+                                        .with_border_fill(if can_be_ai_context {
+                                            self.warp_theme
+                                                .block_selection_as_context_border_color()
+                                        } else {
+                                            self.warp_theme.accent()
+                                        }),
+                                );
+                        }
                     }
 
                     // If this is the top of a continuous selection, there's a top border, so we don't want to draw
                     // the gray border at the top of the block.
-                    if is_top_of_continuous_selection {
+                    if is_top_of_continuous_selection && show_block_selection_highlight {
                         draw_border_above_block = false;
                     }
 

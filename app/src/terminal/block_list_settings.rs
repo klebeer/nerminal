@@ -65,5 +65,15 @@ define_settings_group!(BlockListSettings, settings: [
        private: false,
        toml_path: "appearance.blocks.show_command_duration",
        description: "Whether to show how long each command took next to its prompt.",
+   },
+   show_block_selection_highlight: ShowBlockSelectionHighlight {
+       type: bool,
+       default: true,
+       supported_platforms: SupportedPlatforms::ALL,
+       sync_to_cloud: SyncToCloud::Globally(RespectUserSyncSetting::Yes),
+       surface: settings::SettingSurfaces::GUI,
+       private: false,
+       toml_path: "appearance.blocks.show_block_selection_highlight",
+       description: "Whether to tint and outline a block while it is selected.",
    }
 ]);
