@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate the Nerminal alternate app icons.
 
-Every variant keeps the same identity: a CRT whose screen is a nerd face, with
-thick taped glasses for eyes and a shell prompt for a mouth. Only the era
-treatment changes. Homage to the genre, never to anyone's marks or characters.
+Three families. The CRT: a tube whose screen is a nerd face, with thick taped
+glasses for eyes and a shell prompt for a mouth, in one palette or another. The
+portrait: Orlok, 1922, on a different night each time. The sleeves: no box and
+no face at all, one figure per record alone on a dark ground. Homage to a
+genre, never to anyone's marks or characters.
 """
 
+import math
 import pathlib
 import subprocess
 import sys
@@ -58,17 +61,6 @@ def prompt_mouth(colour, w=13):
       <rect x="258" y="288" width="46" height="12" rx="6" fill="{colour}"/>'''
 
 
-def horns_mouth(colour, w=14):
-    """Metal variant mouth: \\m/ ."""
-    return f'''
-      <g stroke="{colour}" stroke-width="{w}" stroke-linecap="round"
-         stroke-linejoin="round" fill="none">
-        <line x1="196" y1="256" x2="212" y2="300"/>
-        <polyline points="228,300 228,266 246,292 264,266 264,300"/>
-        <line x1="300" y1="300" x2="316" y2="256"/>
-      </g>'''
-
-
 def scanlines(x, y, w, h, opacity="0.06", pitch=10):
     rows = "".join(
         f'<rect x="{x}" y="{yy}" width="{w}" height="3"/>'
@@ -114,164 +106,6 @@ SKY = ('<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
        '<stop offset="66%" stop-color="#7c1a86"/><stop offset="86%" stop-color="#e0257f"/>'
        '<stop offset="100%" stop-color="#ff7a3d"/></linearGradient>')
 BELOW = '<clipPath id="below"><rect x="0" y="342" width="512" height="170"/></clipPath>'
-
-
-def variant_metal():
-    defs = ('<linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">'
-            '<stop offset="0%" stop-color="#e9edf2"/><stop offset="45%" stop-color="#8c95a3"/>'
-            '<stop offset="55%" stop-color="#3c424d"/><stop offset="100%" stop-color="#9aa3b1"/>'
-            '</linearGradient>')
-    studs = "".join(
-        f'<circle cx="{x}" cy="128" r="6" fill="url(#chrome)"/>'
-        f'<circle cx="{x}" cy="326" r="6" fill="url(#chrome)"/>'
-        for x in range(112, 421, 44)
-    )
-    return head(defs) + f'''
-    <rect x="0" y="0" width="512" height="512" fill="#0a0a0d"/>
-    <g stroke="#1c1f26" stroke-width="2">
-      {"".join(f'<line x1="0" y1="{y}" x2="512" y2="{y}"/>' for y in range(0, 512, 16))}
-    </g>
-    <path d="M300 40 l-150 210 h96 l-58 222 175 -250 h-104 z" fill="#f5f7fa" opacity="0.10"/>
-    {crt("#16181d", "url(#chrome)", 9, "#050507")}
-    {studs}
-    {scanlines(116, 146, 280, 168, "0.05")}
-    {glasses("#101318", "#040406", "#f4f1e4", "#ffffff", "0.5")}
-    {horns_mouth("#e9edf2")}
-    <circle cx="396" cy="328" r="7" fill="#ff2b2b"/>
-''' + TAIL
-
-
-def variant_arcade():
-    px = 16
-    pixels = []
-    for i, (x, y, c) in enumerate([
-        (0, 0, "#ff004d"), (1, 0, "#ffa300"), (2, 0, "#ffec27"),
-        (0, 1, "#00e436"), (1, 1, "#29adff"), (2, 1, "#83769c"),
-    ]):
-        pixels.append(f'<rect x="{40 + x * px}" y="{40 + y * px}" width="{px}" height="{px}" fill="{c}"/>')
-    return head("") + f'''
-    <rect x="0" y="0" width="512" height="512" fill="#1d2b53"/>
-    <g opacity="0.28">
-      {"".join(f'<rect x="{x}" y="0" width="{px}" height="512" fill="#29adff" opacity="0.06"/>' for x in range(0, 512, px * 2))}
-    </g>
-    {"".join(pixels)}
-    {crt("#7e2553", "#ffec27", 10, "#000000")}
-    {scanlines(116, 146, 280, 168, "0.10", 8)}
-    {glasses("#00221a", "#000000", "#fff1e8", "#ffffff", "0.65")}
-    {prompt_mouth("#00e436", 15)}
-    <circle cx="396" cy="328" r="8" fill="#ffec27"/>
-''' + TAIL
-
-
-def variant_cartridge():
-    ridges = "".join(
-        f'<rect x="{x}" y="392" width="14" height="30" fill="#2a2f3a"/>'
-        for x in range(150, 361, 30)
-    )
-    return head("") + f'''
-    <rect x="0" y="0" width="512" height="512" fill="#20242e"/>
-    <rect x="96" y="60" width="320" height="392" rx="26" fill="#4a5160"/>
-    <rect x="96" y="60" width="320" height="392" rx="26" fill="none"
-          stroke="#6d7686" stroke-width="6"/>
-    <rect x="128" y="96" width="256" height="200" rx="12" fill="#e8e4d8"/>
-    <rect x="128" y="96" width="256" height="34" rx="12" fill="#ff2d95"/>
-    <rect x="152" y="146" width="208" height="126" rx="10" fill="#12141b"/>
-    {scanlines(152, 146, 208, 126, "0.07", 9)}
-    {glasses("#0c2b26", "#07060f", "#f4f1e4", "#eafcff", "0.5", 32, 206, 306, 196, 11)}
-    <g stroke="#39ff9c" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none">
-      <polyline points="222,232 244,248 222,264"/>
-    </g>
-    <rect x="256" y="256" width="36" height="10" rx="5" fill="#39ff9c"/>
-    <rect x="128" y="330" width="256" height="46" rx="8" fill="#39404e"/>
-    {ridges}
-''' + TAIL
-
-
-def variant_mixtape():
-    return head("") + f'''
-    <rect x="0" y="0" width="512" height="512" fill="#141019"/>
-    <rect x="56" y="132" width="400" height="248" rx="22" fill="#2b2233"
-          stroke="#ff2d95" stroke-width="7"/>
-    <rect x="88" y="160" width="336" height="80" rx="8" fill="#f0ead6"/>
-    <rect x="88" y="160" width="336" height="26" rx="8" fill="#ffb400"/>
-    <rect x="112" y="268" width="288" height="86" rx="12" fill="#12141b"/>
-    {scanlines(112, 268, 288, 86, "0.06", 9)}
-    <g>
-      <circle cx="188" cy="311" r="38" fill="#0c2b26"/>
-      <circle cx="324" cy="311" r="38" fill="#0c2b26"/>
-      <g fill="none" stroke="#07060f" stroke-width="13">
-        <circle cx="188" cy="311" r="38"/><circle cx="324" cy="311" r="38"/>
-        <path d="M226 307 q30 -12 60 0"/>
-      </g>
-      <g fill="#3a3f4a">
-        <circle cx="188" cy="311" r="13"/><circle cx="324" cy="311" r="13"/>
-      </g>
-      <g stroke="#eafcff" stroke-width="8" stroke-linecap="round" opacity="0.5">
-        <line x1="170" y1="300" x2="188" y2="288"/>
-        <line x1="306" y1="300" x2="324" y2="288"/>
-      </g>
-      <rect x="243" y="286" width="26" height="28" rx="4" fill="#f4f1e4"
-            opacity="0.92" transform="rotate(-12 256 300)"/>
-    </g>
-    <g stroke="#39ff9c" stroke-width="11" stroke-linecap="round" fill="none">
-      <line x1="150" y1="404" x2="362" y2="404"/>
-    </g>
-''' + TAIL
-
-
-def variant_neon():
-    return head("") + f'''
-    <rect x="0" y="0" width="512" height="512" fill="#05060a"/>
-    <g stroke="#1a2340" stroke-width="2">
-      {"".join(f'<line x1="{x}" y1="0" x2="{x}" y2="512"/>' for x in range(0, 512, 32))}
-      {"".join(f'<line x1="0" y1="{y}" x2="512" y2="{y}"/>' for y in range(0, 512, 32))}
-    </g>
-    <g fill="none" stroke="#ff2d95" stroke-width="10" opacity="0.35">
-      <rect x="80" y="112" width="352" height="230" rx="36"/>
-    </g>
-    <g fill="none" stroke="#ff2d95" stroke-width="5">
-      <rect x="80" y="112" width="352" height="230" rx="36"/>
-      <path d="M226 322 h60 l14 60 h-88 z"/>
-      <rect x="176" y="378" width="160" height="22" rx="11"/>
-    </g>
-    <g fill="none" stroke="#00e5ff" stroke-width="4" opacity="0.9">
-      <circle cx="190" cy="204" r="44"/><circle cx="322" cy="204" r="44"/>
-      <path d="M234 200 q22 -14 44 0"/>
-      <path d="M146 196 l-30 -14"/><path d="M366 196 l30 -14"/>
-    </g>
-    <g stroke="#39ff9c" stroke-width="11" stroke-linecap="round"
-       stroke-linejoin="round" fill="none">
-      <polyline points="212,258 240,278 212,298"/>
-    </g>
-    <rect x="258" y="288" width="46" height="11" rx="6" fill="#39ff9c"/>
-''' + TAIL
-
-
-def variant_vhs():
-    bars = "".join(
-        f'<rect x="0" y="{y}" width="512" height="{h}" fill="#ffffff" opacity="0.05"/>'
-        for y, h in ((150, 6), (238, 4), (300, 8), (392, 5))
-    )
-    return head("") + f'''
-    <rect x="0" y="0" width="512" height="512" fill="#0e1016"/>
-    {bars}
-    <g opacity="0.55">
-      <rect x="84" y="116" width="352" height="230" rx="36" fill="none"
-            stroke="#ff2d95" stroke-width="8"/>
-    </g>
-    <g opacity="0.55">
-      <rect x="76" y="108" width="352" height="230" rx="36" fill="none"
-            stroke="#00e5ff" stroke-width="8"/>
-    </g>
-    {crt("#191c24", "#d8dde6", 6, "#07080d")}
-    {scanlines(116, 146, 280, 168, "0.09", 7)}
-    {glasses("#0c2b26", "#07060f", "#f4f1e4", "#eafcff", "0.5")}
-    {prompt_mouth("#39ff9c")}
-    <g fill="#ff2d95">
-      <polygon points="132,168 132,190 152,179"/>
-    </g>
-    <rect x="162" y="172" width="58" height="12" rx="3" fill="#ffffff" opacity="0.65"/>
-''' + TAIL
 
 
 def fangs(colour="#fdf6ff", tip="#c2143c"):
@@ -836,9 +670,407 @@ def variant_crypt():
     )
 
 
+# ---------------------------------------------------------------------------
+# The record-sleeve family
+#
+# No tube and no face. Six sleeves from one shelf of progressive metal, each
+# reduced to the one figure it is remembered by: the spiral, the radiant body,
+# the smoke, the ribs, the winged eye, the ornament. Drawn from scratch in the
+# same bone line and single accent, so the six read as one set.
+#
+# The vocabulary is old and unowned. Nothing here traces a photograph, a
+# painting, a sleeve or a logo, and the variants are named for what they draw
+# rather than for anybody's record.
+# ---------------------------------------------------------------------------
+
+VOID = "#05060a"
+BONE = "#ded5c0"
+DIM = "#3f3c31"
+
+
+def ink(accent, extra_defs="", ground=VOID, glow="0.30"):
+    """Open a sleeve variant: the ground and the accent haze behind it."""
+    defs = (
+        '<radialGradient id="aura" cx="0.5" cy="0.5" r="0.62">'
+        f'<stop offset="0%" stop-color="{accent}" stop-opacity="{glow}"/>'
+        f'<stop offset="55%" stop-color="{accent}" stop-opacity="0.07"/>'
+        f'<stop offset="100%" stop-color="{accent}" stop-opacity="0"/>'
+        '</radialGradient>'
+        '<radialGradient id="vignette" cx="0.5" cy="0.5" r="0.72">'
+        '<stop offset="50%" stop-color="#000000" stop-opacity="0"/>'
+        '<stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>'
+        '</radialGradient>' + extra_defs
+    )
+    return (
+        head(defs)
+        + f'<rect x="0" y="0" width="512" height="512" fill="{ground}"/>'
+        + '<rect x="0" y="0" width="512" height="512" fill="url(#aura)"/>'
+    )
+
+
+def ink_close(halo):
+    """Close a geometry variant with the shared ring and the vignette."""
+    return (
+        f'<g fill="none" stroke="{halo}">'
+        '<circle cx="256" cy="256" r="234" stroke-width="3" opacity="0.28"/>'
+        '<circle cx="256" cy="256" r="223" stroke-width="1.5" opacity="0.16"/>'
+        '</g>'
+        '<rect x="0" y="0" width="512" height="512" fill="url(#vignette)"/>'
+        + TAIL
+    )
+
+
+def line_pair(paths, accent, w=11, glow=2.1):
+    """A figure drawn twice: once wide in the accent for the bleed a thin line
+    cannot give, once at weight in bone. Every construction here uses it, which
+    is what makes the six look struck by the same hand."""
+    body = "".join(paths)
+    return (
+        f'<g fill="none" stroke="{accent}" stroke-width="{w * glow:.1f}" '
+        f'stroke-linecap="round" stroke-linejoin="round" opacity="0.30">{body}</g>'
+        f'<g fill="none" stroke="{BONE}" stroke-width="{w}" '
+        f'stroke-linecap="round" stroke-linejoin="round">{body}</g>'
+    )
+
+
+def _ring_points(cx, cy, r, n, rot=-90.0):
+    return [
+        (cx + r * math.cos(math.radians(rot + i * 360.0 / n)),
+         cy + r * math.sin(math.radians(rot + i * 360.0 / n)))
+        for i in range(n)
+    ]
+
+
+def _points(pts):
+    return " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+
+
+# The corner each square's quarter-circle turns about, by the side the square
+# was added on. Getting this wrong gives a chain of arcs that meet but do not
+# stay tangent, which reads as a wobble rather than as a spiral.
+_PIVOT = {
+    "above": lambda x, y, s: (x, y + s),
+    "left": lambda x, y, s: (x + s, y + s),
+    "below": lambda x, y, s: (x + s, y),
+    "right": lambda x, y, s: (x, y),
+}
+
+
+def _fib_tiling(count):
+    """The Fibonacci tiling in unit squares, y down, plus its bounding box."""
+    fib = [1, 1]
+    while len(fib) < count:
+        fib.append(fib[-1] + fib[-2])
+    x0, y0, x1, y1 = 0, 0, 1, 1
+    squares = [(0, 0, 1, "above")]
+    for i in range(1, count):
+        s = fib[i]
+        side = ("left", "below", "right", "above")[(i - 1) % 4]
+        if side == "left":
+            x0 -= s
+            squares.append((x0, y0, s, side))
+        elif side == "below":
+            squares.append((x0, y1, s, side))
+            y1 += s
+        elif side == "right":
+            squares.append((x1, y0, s, side))
+            x1 += s
+        else:
+            y0 -= s
+            squares.append((x0, y0, s, side))
+    return squares, (x0, y0, x1, y1)
+
+
+def variant_spiral():
+    """The golden rectangle taken apart into squares, and the curve that falls
+    out of it once you join their corners."""
+    accent = "#b8722e"
+    squares, (ux0, uy0, ux1, uy1) = _fib_tiling(8)
+    span, rise = ux1 - ux0, uy1 - uy0
+    u = 434.0 / span
+    ox = (512 - span * u) / 2 - ux0 * u
+    oy = (512 - rise * u) / 2 - uy0 * u
+
+    cells, arcs = [], []
+    for x, y, s, side in squares:
+        cells.append(
+            f'<rect x="{ox + x * u:.1f}" y="{oy + y * u:.1f}" '
+            f'width="{s * u:.1f}" height="{s * u:.1f}"/>'
+        )
+        px, py = _PIVOT[side](x, y, s)
+        corners = [(x, y), (x + s, y), (x, y + s), (x + s, y + s)]
+        (ax, ay), (bx, by) = [c for c in corners if (c[0] == px) != (c[1] == py)]
+        turn = (ax - px) * (by - py) - (ay - py) * (bx - px)
+        arcs.append(
+            f'<path d="M{ox + ax * u:.1f} {oy + ay * u:.1f} '
+            f'A{s * u:.1f} {s * u:.1f} 0 0 {1 if turn > 0 else 0} '
+            f'{ox + bx * u:.1f} {oy + by * u:.1f}"/>'
+        )
+
+    return (
+        ink(accent)
+        + f'<g fill="none" stroke="{DIM}" stroke-width="2.5">{"".join(cells)}</g>'
+        + f'<rect x="{ox + ux0 * u:.1f}" y="{oy + uy0 * u:.1f}" '
+        f'width="{span * u:.1f}" height="{rise * u:.1f}" fill="none" '
+        f'stroke="{accent}" stroke-width="4" opacity="0.55"/>'
+        + line_pair(arcs, accent, 12)
+        + ink_close(DIM)
+    )
+
+
+# One path, not a head sitting on a pair of shoulders: the join has to be the
+# trapezius line or the figure comes out a chess pawn. Small enough that the
+# innermost band of the field still clears the crown.
+BUST = (
+    "M256 170 C303 170 331 205 331 250 C331 288 318 318 300 336 "
+    "C296 344 294 352 294 366 C294 386 302 396 320 404 "
+    "C366 422 398 466 402 512 L110 512 "
+    "C114 466 146 422 192 404 C210 396 218 386 218 366 "
+    "C218 352 216 344 212 336 C194 318 181 288 181 250 "
+    "C181 205 209 170 256 170 Z"
+)
+
+
+def variant_aura():
+    """The body drawn as light: a bust against the banded field it gives off,
+    lit from the point between the eyes and open enough to see through."""
+    teal, gold, violet = "#2fa39a", "#d9a441", "#7d5fb8"
+    ground = "#04090c"
+    cx, cy = 256, 254
+
+    defs = (
+        f'<clipPath id="bust"><path d="{BUST}"/></clipPath>'
+        '<linearGradient id="flesh" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#0d3b3c"/>'
+        '<stop offset="55%" stop-color="#072024"/>'
+        '<stop offset="100%" stop-color="#03080b"/></linearGradient>'
+    )
+    bands = "".join(
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" '
+        f'stroke="{(teal, gold, violet, "#cfe8dd")[i % 4]}" '
+        f'stroke-width="{3 + (i % 2) * 5}" '
+        f'opacity="{max(0.10, 0.70 - i * 0.06):.2f}"/>'
+        for i, r in enumerate((132, 156, 182, 210, 240, 272, 306))
+    )
+    rays = "".join(
+        f'<line x1="{cx + 120 * math.cos(math.radians(a)):.1f}" '
+        f'y1="{cy + 120 * math.sin(math.radians(a)):.1f}" '
+        f'x2="{cx + 310 * math.cos(math.radians(a)):.1f}" '
+        f'y2="{cy + 310 * math.sin(math.radians(a)):.1f}"/>'
+        for a in range(0, 360, 6)
+    )
+    # The sleeve trick this is after: every layer of a body shown at once. Here
+    # that is contour lines across the figure and a column of vertebrae, both
+    # cut to the silhouette so they stop at the skin.
+    # Only across the torso. Ruling the head too turns it into a striped egg.
+    contours = "".join(
+        f'<line x1="100" y1="{y}" x2="412" y2="{y}"/>' for y in range(414, 512, 22)
+    )
+    spine = "".join(
+        f'<circle cx="{cx}" cy="{y}" r="{8 - i * 0.6:.1f}"/>'
+        for i, y in enumerate(range(376, 500, 22))
+    )
+
+    return (
+        ink(teal, defs, ground=ground, glow="0.20")
+        + f'<g fill="none" stroke="{gold}" stroke-width="1.6" opacity="0.12">{rays}</g>'
+        + bands
+        + f'<path d="{BUST}" fill="url(#flesh)"/>'
+        + f'<g clip-path="url(#bust)">'
+        f'<g fill="none" stroke="{teal}" stroke-width="1.8" opacity="0.24">'
+        f'{contours}</g>'
+        f'<g fill="{gold}" opacity="0.7">{spine}</g></g>'
+        + f'<path d="{BUST}" fill="none" stroke="{teal}" stroke-width="5"/>'
+        + f'<circle cx="{cx}" cy="232" r="30" fill="{gold}" opacity="0.22"/>'
+        + f'<circle cx="{cx}" cy="232" r="12" fill="{gold}"/>'
+        + ink_close(teal)
+    )
+
+
+def variant_ash():
+    """A face surfacing in smoke and going under again, behind the fine vertical
+    ruling of a lenticular print."""
+    ochre, ember = "#b08a52", "#e6c07a"
+    defs = (
+        '<filter id="fog" x="0%" y="0%" width="100%" height="100%">'
+        '<feTurbulence type="fractalNoise" baseFrequency="0.007" numOctaves="5" '
+        'seed="17" result="n"/>'
+        '<feColorMatrix in="n" type="matrix" '
+        'values="0 0 0 0 0.69  0 0 0 0 0.54  0 0 0 0 0.32  1.1 0.7 0 0 -0.55"/>'
+        '</filter>'
+        '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%">'
+        '<feGaussianBlur stdDeviation="9"/></filter>'
+        '<radialGradient id="lit" cx="0.5" cy="0.42" r="0.62">'
+        f'<stop offset="0%" stop-color="{ember}" stop-opacity="0.95"/>'
+        f'<stop offset="55%" stop-color="{ochre}" stop-opacity="0.55"/>'
+        f'<stop offset="100%" stop-color="{ochre}" stop-opacity="0"/>'
+        '</radialGradient>'
+    )
+    # The ruling is what tells the eye it is looking at a print and not at
+    # weather, so it goes over everything else.
+    ruling = "".join(
+        f'<rect x="{x}" y="0" width="3" height="512"/>' for x in range(0, 512, 12)
+    )
+    face = ('M256 116 C314 116 350 160 350 224 C350 288 324 342 298 364 '
+            'C284 376 268 382 256 382 C244 382 228 376 214 364 '
+            'C188 342 162 288 162 224 C162 160 198 116 256 116 Z')
+    # Drawn sharp rather than blurred. Smoke around a face is atmosphere; smoke
+    # across the features is a smudge, and at 32px a smudge is nothing at all.
+    eyes = ('<path d="M180 218 C200 194 230 194 246 218 C230 240 200 240 180 218 Z '
+            'M266 218 C282 194 312 194 332 218 C312 240 282 240 266 218 Z"/>')
+    return (
+        ink(ochre, defs, ground="#070605", glow="0.16")
+        + '<rect x="0" y="0" width="512" height="512" filter="url(#fog)" '
+        'opacity="0.34"/>'
+        + f'<path d="{face}" fill="url(#lit)"/>'
+        + f'<path d="{face}" fill="none" stroke="{ember}" stroke-width="3.5" '
+        'opacity="0.55"/>'
+        + f'<g fill="#050403">{eyes}</g>'
+        + f'<g fill="none" stroke="{ember}" stroke-width="4" opacity="0.75">{eyes}</g>'
+        + f'<g fill="#050403" opacity="0.55">'
+        '<path d="M256 240 L270 296 L256 304 L242 296 Z"/></g>'
+        + '<path d="M212 336 C238 328 274 328 300 336" fill="none" '
+        'stroke="#050403" stroke-width="10" stroke-linecap="round" opacity="0.85"/>'
+        + '<rect x="0" y="0" width="512" height="512" filter="url(#fog)" '
+        'opacity="0.20"/>'
+        + f'<g fill="#000000" opacity="0.18">{ruling}</g>'
+        + ink_close(ochre)
+    )
+
+
+def variant_ribcage():
+    """A ribcage cast in plaster, taken to the waterline and left there."""
+    accent = "#8f4a2a"
+    # Each rib leaves the sternum and only ever descends. Letting one rise before
+    # it falls closes the pair into an arch, and eight nested arches are a
+    # basket, not a ribcage.
+    ribs = []
+    for i in range(8):
+        y = 134 + i * 30
+        reach = 58 + 70 * math.sin(math.pi * (i + 0.9) / 9.4)
+        drop = 44 + i * 11
+        for sign in (-1, 1):
+            ribs.append(
+                f'<path d="M{256 + sign * 20} {y} '
+                f'C{256 + sign * reach * 0.58:.0f} {y + drop * 0.06:.0f} '
+                f'{256 + sign * reach * 0.97:.0f} {y + drop * 0.44:.0f} '
+                f'{256 + sign * reach:.0f} {y + drop:.0f}"/>'
+            )
+    spine = "".join(
+        f'<rect x="243" y="{y}" width="26" height="19" rx="8"/>'
+        for y in range(120, 384, 27)
+    )
+    # The undertow itself: the drag of water under the line it left on the cast.
+    current = "".join(
+        f'<path d="M-20 {y} C 120 {y - 16} 200 {y + 18} 340 {y - 6} '
+        f'C 420 {y - 16} 480 {y + 8} 532 {y}"/>'
+        for y in (398, 428, 458, 488)
+    )
+    return (
+        ink(accent, ground="#0a0908", glow="0.24")
+        + f'<g fill="none" stroke="{accent}" stroke-width="3" opacity="0.35">'
+        f'{current}</g>'
+        + f'<rect x="0" y="392" width="512" height="120" fill="{accent}" '
+        'opacity="0.10"/>'
+        + line_pair(ribs, accent, 11, 2.0)
+        + f'<g fill="{BONE}" opacity="0.92">{spine}</g>'
+        + f'<g fill="none" stroke="{accent}" stroke-width="3.5" opacity="0.7">'
+        '<line x1="0" y1="392" x2="512" y2="392"/></g>'
+        + ink_close(accent)
+    )
+
+
+def variant_wings():
+    """A winged eye, which is the oldest figure on this shelf by about four
+    thousand years."""
+    gold, violet = "#d9a441", "#8f7ad1"
+    cx, cy = 256, 246
+    # Feathers as leaves rotated about a shared root. Drawn as separate strokes
+    # they scatter; overlapping bodies fanned from one point are what reads as a
+    # wing at the size a dock icon actually gets.
+    feathers = []
+    for sign in (-1, 1):
+        for k in range(8):
+            length = 138 - k * 9
+            angle = -20 + k * 9
+            feathers.append(
+                f'<ellipse cx="{length / 2:.0f}" cy="0" rx="{length / 2:.0f}" '
+                f'ry="{13 - k * 0.9:.1f}" opacity="{0.95 - k * 0.05:.2f}" '
+                f'transform="translate({cx + sign * 44} {cy}) '
+                f'rotate({angle if sign > 0 else 180 - angle})"/>'
+            )
+    stars = "".join(
+        f'<circle cx="{x}" cy="{y}" r="{r}"/>'
+        for x, y, r in ((88, 96, 3), (150, 62, 2), (402, 88, 3.4),
+                        (452, 148, 2.2), (330, 52, 2), (206, 44, 2.6))
+    )
+    lens = f'<path d="M{cx - 92} {cy} Q{cx} {cy - 66} {cx + 92} {cy} ' \
+           f'Q{cx} {cy + 66} {cx - 92} {cy} Z"/>'
+    return (
+        ink(violet, ground="#070512", glow="0.30")
+        + f'<g fill="{BONE}" opacity="0.7">{stars}</g>'
+        + f'<circle cx="{cx}" cy="{cy}" r="150" fill="none" stroke="{violet}" '
+        'stroke-width="3" opacity="0.35"/>'
+        + f'<g fill="{gold}" stroke="#070512" stroke-width="2.5">'
+        f'{"".join(feathers)}</g>'
+        + f'<g fill="#070512">{lens}</g>'
+        + f'<g fill="none" stroke="{BONE}" stroke-width="9" '
+        f'stroke-linejoin="round">{lens}</g>'
+        + f'<circle cx="{cx}" cy="{cy}" r="36" fill="{violet}"/>'
+        + f'<circle cx="{cx}" cy="{cy}" r="36" fill="none" stroke="{gold}" '
+        'stroke-width="7"/>'
+        + f'<circle cx="{cx}" cy="{cy}" r="14" fill="#070512"/>'
+        + ink_close(violet)
+    )
+
+
+def variant_totem():
+    """Ornament stacked ring on ring until it stops being decoration and starts
+    being a thing that looks back."""
+    green, gold = "#1f7a63", "#c9a24a"
+
+    def petals(count, radius, rx, ry, fill, opacity, rot=0.0):
+        return "".join(
+            f'<ellipse cx="0" cy="{-radius}" rx="{rx}" ry="{ry}" fill="{fill}" '
+            f'opacity="{opacity}" transform="translate(256 256) '
+            f'rotate({rot + i * 360.0 / count:.1f})"/>'
+            for i in range(count)
+        )
+
+    hairs = "".join(
+        f'<line x1="{256 + 118 * math.cos(math.radians(a)):.1f}" '
+        f'y1="{256 + 118 * math.sin(math.radians(a)):.1f}" '
+        f'x2="{256 + 224 * math.cos(math.radians(a)):.1f}" '
+        f'y2="{256 + 224 * math.sin(math.radians(a)):.1f}"/>'
+        for a in range(0, 360, 9)
+    )
+    studs = "".join(
+        f'<circle cx="{256 + 232 * math.cos(math.radians(a)):.1f}" '
+        f'cy="{256 + 232 * math.sin(math.radians(a)):.1f}" r="4"/>'
+        for a in range(0, 360, 15)
+    )
+    return (
+        ink(green, ground="#050b09", glow="0.28")
+        + f'<g stroke="{gold}" stroke-width="1.4" opacity="0.16">{hairs}</g>'
+        + petals(24, 216, 9, 26, gold, "0.35", 7.5)
+        + petals(16, 186, 17, 46, green, "0.55")
+        + f'<g fill="none" stroke="{gold}" stroke-width="2.5" opacity="0.6">'
+        '<circle cx="256" cy="256" r="204"/><circle cx="256" cy="256" r="148"/>'
+        '<circle cx="256" cy="256" r="96"/></g>'
+        + petals(12, 126, 20, 42, "#e0bd66", "0.62", 15)
+        + petals(8, 66, 22, 40, green, "0.75")
+        + f'<g fill="{gold}" opacity="0.85">{studs}</g>'
+        + f'<circle cx="256" cy="256" r="34" fill="#050b09"/>'
+        + f'<circle cx="256" cy="256" r="34" fill="none" stroke="{gold}" '
+        'stroke-width="8"/>'
+        + f'<circle cx="256" cy="256" r="13" fill="{gold}"/>'
+        + ink_close(gold)
+    )
+
+
 VARIANTS = {
-    # The Nosferatu family: one portrait, seven nights. Blood Moon is the one
-    # the app wears by default. The 80s set below it stays; the point is choice.
+    # The tube and the portrait first, then the sleeves. Ruthven is the one the
+    # app wears by default; the rest are there because the point is choice.
     "catppuccin": variant_catppuccin,
     "ruthven": variant_ruthven,
     "dawn": variant_dawn,
@@ -848,12 +1080,12 @@ VARIANTS = {
     "castle": variant_castle,
     "bloodmoon": variant_bloodmoon,
     "crypt": variant_crypt,
-    "metal": variant_metal,
-    "arcade": variant_arcade,
-    "cartridge": variant_cartridge,
-    "mixtape": variant_mixtape,
-    "neon": variant_neon,
-    "vhs": variant_vhs,
+    "spiral": variant_spiral,
+    "aura": variant_aura,
+    "ash": variant_ash,
+    "ribcage": variant_ribcage,
+    "wings": variant_wings,
+    "totem": variant_totem,
 }
 
 

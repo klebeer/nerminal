@@ -22,6 +22,10 @@ Apple Silicon, macOS 11 and later. Signed and notarized.
 **Themes.** Nosferatu and Nosferatu Light, Dracula, and Catppuccin in all four
 flavours. Mocha is the default.
 
+**Pick the icon in the dock.** Settings > Appearance carries three sets: a CRT
+with a nerd face, the 1922 portrait on a different night each time, and six
+drawn after a shelf of records.
+
 **Secure keyboard entry.** While the window has focus, other applications
 cannot observe your keystrokes, the same protection Terminal and iTerm2 offer.
 It matters most at a `sudo` prompt, which the system cannot recognise as a
